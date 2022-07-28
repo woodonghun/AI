@@ -1,8 +1,14 @@
+
 import numpy as np
-from PySide2.QtWidgets import QWidget, QPushButton, QLineEdit, QFileDialog, QDialog, QLabel
+import openpyxl
+from PySide2.QtWidgets import QWidget, QPushButton, QLineEdit, QFileDialog, QDialog, QLabel, QTableWidget, \
+    QTableWidgetItem
 import pandas as pd
 
 # 엑셀이 비었을 때, 셋팅이 되어 있을 때
+# label, predict 번호 일치 하지 않을때
+# 엑셀 위치 잘못 되었을 때
+# label, predict 하나 라도 없을 때
 
 
 class Preshin_UI(QWidget):
@@ -13,6 +19,26 @@ class Preshin_UI(QWidget):
         self.dialog_close()
 
     def initUI(self):
+
+        self.table = QTableWidget(4, 2, self.dialog)
+        self.table.setSortingEnabled(False)  # 정렬기능
+        self.table.resizeRowsToContents()
+        self.table.resizeColumnsToContents()  # 이것만으로는 checkbox 열 은 잘 조절안됨.
+        self.table.setColumnWidth(0, 80)  # checkbox 열 폭 강제 조절.
+        self.table.setColumnWidth(1, 80)
+
+        self.table.setItem(0, 0, QTableWidgetItem('Batch size'))
+        self.table.setItem(0, 1, QTableWidgetItem('4'))
+        self.table.setItem(1, 0, QTableWidgetItem('Learning rate'))
+        self.table.setItem(1, 1, QTableWidgetItem('2e-4'))
+        self.table.setItem(2, 0, QTableWidgetItem('Optimizer'))
+        self.table.setItem(2, 1, QTableWidgetItem('adam'))
+        self.table.setItem(3, 0, QTableWidgetItem('aug'))
+        self.table.setItem(3, 1, QTableWidgetItem('0'))
+
+        self.table.setHorizontalHeaderLabels(["name", "Value"])
+        self.table.setGeometry(10, 200, 530, 200)
+
         btn_pre_path = QPushButton(self.dialog)
         btn_lbl_path = QPushButton(self.dialog)
         btn_result_path = QPushButton(self.dialog)
@@ -41,8 +67,10 @@ class Preshin_UI(QWidget):
         btn_export.clicked.connect(self.btn_export_clicked)
         btn_pre_path.clicked.connect(self.btn_pre_clicked)
 
-        edt = QLineEdit(self.dialog)
-        edt.setGeometry(100, 100, 100, 100)
+        self.comment = ''
+        self.edt = QLineEdit(self.dialog)
+        self.edt.setText(self.comment)
+        self.edt.setGeometry(100, 100, 100, 100)
 
         self.dialog.setWindowTitle('AI')
         self.dialog.setGeometry(500, 300, 550, 450)
@@ -62,6 +90,9 @@ class Preshin_UI(QWidget):
         self.result_fname = QFileDialog.getOpenFileName(self)
         self.lbl_result.setText(self.result_fname[0])
 
+        df_sheet = pd.read_excel(self.result_fname[0], sheet_name=0, header=3, engine='openpyxl')
+        if len(df_sheet.columns) > 2:
+            pass
     def btn_export_clicked(self):
         # pd.set_option('mode.chained_assignment', None)      # 사본 사용 혼돈 경고 무시
         landmark_name = ['N', 'Sella', 'R FZP', 'L FZP', 'R Or', 'L Or', 'R Po', 'L Po', 'R TFP', 'L TFP', 'R KRP',
@@ -121,16 +152,16 @@ class Preshin_UI(QWidget):
         result.drop('x', axis=1, inplace=True)  # 이름부분 뺌
         result.drop('y', axis=1, inplace=True)
         result.drop('z', axis=1, inplace=True)
+
         # https://trading-for-chicken.tistory.com/43 제곱 거듭 제곱 해야함
 
-
-        df_sheet = pd.read_excel(self.result_fname[0], sheet_name=0, engine='openpyxl')     # result xlsx가져옴, *** header=2 추가해야됨 ***
+        df_sheet = pd.read_excel(self.result_fname[0], sheet_name=0, header=3, engine='openpyxl')     # result xlsx가져옴, *** header=3 추가해야됨 ***
 
         if len(df_sheet.columns) > 2:   # 이미 값이 들어있음
+            self.comment += self.edt.text()
+
             df_sheet = df_sheet.drop(['landmark_num','landmark_name','aver'], axis=1)   # 값만 추출
             df_sheet = df_sheet.drop(df_sheet.index[len(df_sheet)-1])   # 마지막 행 삭제
-            print(df_sheet)
-            print(len(df_sheet))
             df_sheet.insert(len(df_sheet.columns), self.name[-2], result[self.name[-2]])    # 값 추가
 
             sum = df_sheet.sum()
@@ -140,12 +171,22 @@ class Preshin_UI(QWidget):
             df_sheet['aver'] = df_sheet.mean(axis=1)
             df.loc[len(df_sheet)-1, 'aver'] = aver
             df_sheet.loc[-1] = df_sheet.mean(axis=0)
-
+            df_dict = df_sheet.to_dict('list')
+            print(df_dict.keys())
             landmark_name.append('aver')  # 맨 아래에 aver 추가
             df_sheet.insert(0, 'landmark_num', df['landmark_num'])
             df_sheet.insert(1, 'landmark_name', landmark_name)
-            df_sheet.to_excel(self.result_fname[0], index=False)
-            print(df_sheet)
+            df_sheet.to_excel(self.result_fname[0], startcol=0, startrow=3, index=False)
+
+            wb = openpyxl.load_workbook(filename=self.result_fname[0])
+            ws = wb.active
+
+            ws.cell(row=1,
+                    column=3).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}, Learning rate = {self.table.item(1, 1).text()}, optimizer = {self.table.item(2, 1).text()}, aug = {self.table.item(3, 1).text()}'
+            ws.cell(row=2, column=3).value = f'comment : {self.comment}'
+            ws.cell(row=3, column=3).value = 'id'
+
+            wb.save(filename=self.result_fname[0])
 
         else:
             df_final = pd.DataFrame()       # 다음에는 새로 쓰지말고 덮어쓰기
@@ -157,8 +198,17 @@ class Preshin_UI(QWidget):
             df_final.insert(0, 'landmark_num', df['landmark_num'])
             df_final.insert(1, 'landmark_name', landmark_name)
 
-            df_final.to_excel(self.result_fname[0], index=False)    # C:\woo_project\AI\root 예시 #
-            print(df_final)
+            df_final.to_excel(self.result_fname[0], startcol=0, startrow=3, index=False)    # C:\woo_project\AI\root 예시 #
 
+            wb = openpyxl.load_workbook(filename=self.result_fname[0])
+            ws = wb.active
+
+            ws.cell(row=1, column=3).value = f'Hyperparameter Batch size = {self.table.item(0,1).text()}, Learning rate = {self.table.item(1,1).text()}, optimizer = {self.table.item(2,1).text()}, aug = {self.table.item(3,1).text()}'
+            ws.cell(row=2, column=3).value = f'comment : {self.edt.text()}'
+            ws.cell(row=3, column=3).value = 'id'
+
+            wb.save(filename=self.result_fname[0])
+            self.comment += self.edt.text()
+        self.edt.setText('')
     def dialog_close(self):
         self.dialog.close()
