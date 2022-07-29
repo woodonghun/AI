@@ -196,6 +196,8 @@ class Preshin_UI(QWidget):
                             list_num = result['landmark_num'].tolist()
                             list_num.append('')
 
+                            print(df_sheet.to_dict('list'))
+
                             df_sheet.insert(0, 'landmark_num', list_num)
                             df_sheet.insert(1, 'landmark_name', landmark_name)
                             df_sheet.to_excel(file_name[0], startcol=0, startrow=3, index=False)
