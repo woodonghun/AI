@@ -1,4 +1,4 @@
-import numpy as np
+from openpyxl.styles import Border, borders
 import openpyxl
 from PySide2.QtWidgets import QWidget, QPushButton, QLineEdit, QFileDialog, QDialog, QLabel, QTableWidget, \
     QTableWidgetItem, QMessageBox, QPlainTextEdit
@@ -88,25 +88,27 @@ class Preshin_UI(QWidget):
         self.lbl_name = name.split('/')
 
     def btn_export_clicked(self):
-        # lbl, pre 둘다 선택 됬을때
+        # lbl, pre 둘다 선택
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
-            # 환자 id 일치하지 않음
+            # 환자 id 일치 x
             if self.lbl_name[-2] != self.pre_name[-2]:
                 self.messagebox("label 과 predict의 환자 id가 일치하지 않습니다.")
-
+            # 환자 id 일치 o
             else:
-                file_name = QFileDialog.getSaveFileName(self, self.tr("Save Data file"), "C:/woo_project/AI/root",
-                                                        self.tr("Data Files(*.xlsx)"))  # 창이름, 위치, 확장자
-                if file_name[0] != '':
-                    self.sheet_color()
-                    df_sheet = pd.read_excel(file_name[0], sheet_name=0, header=3,
+                self.file_name = QFileDialog.getSaveFileName(self, self.tr("Save Data file"), "C:/woo_project/AI/root",
+                                                        self.tr("Data Files(*.xlsx)"))  # 저장창 뜨게함 창이름, 위치, 확장자
+                # 저장 파일 선택 했을 때
+                if self.file_name[0] != '':
+                    self.sheet_style()
+                    df_sheet = pd.read_excel(self.file_name[0], sheet_name=0, header=3,
                                              engine='openpyxl')  # result xlsx가져옴
+                    # 엑셀에 id 이미 존재함
                     if self.lbl_name[-2] in df_sheet.columns:
                         self.messagebox("이미 존재 하는 id 입니다")
-
+                    # 엑셀에 id 없음
                     else:
                         # 랜드마크 이름설정
-                        landmark_name = ['N', 'Sella', 'R FZP', 'L FZP', 'R Or', 'L Or', 'R Po', 'L Po', 'R TFP', 'L TFP', 'R KRP',
+                        self.landmark_name = ['N', 'Sella', 'R FZP', 'L FZP', 'R Or', 'L Or', 'R Po', 'L Po', 'R TFP', 'L TFP', 'R KRP',
                                          'L KRP', 'ANS', 'PNS', 'A', 'B', 'Pog', 'Gn', 'Me', 'R CP Point', 'L CP Point',
                                          'R Sigmoid notch', 'L Sigmoid notch', 'R Anterior ramal point', 'L Anterior ramal point',
                                          'R Post Go', 'L Post Go', 'R Go', 'L Go', 'R Inf Go', 'L Inf Go', 'U1MP', 'R U1CP',
@@ -134,21 +136,23 @@ class Preshin_UI(QWidget):
                                          'L Cheilion', 'Labiale Inferius', 'R S Go', 'L S Go', 'R U4PRP', 'R U5PRP', 'R U6PRP',
                                          'R U7PRP', 'L U4PRP', 'L U5PRP', 'L U6PRP', 'L U7PRP']
 
-                        label = open(self.lbl_fname[0], "r", encoding="UTF-8")  # label 랜드마크 저장
+                        # label open 하고 dataframe 에 저장
+                        label = open(self.lbl_fname[0], "r", encoding="UTF-8")
                         lines = label.read()
                         lines = lines.replace("\n", ",")
                         lines = lines.split(",")
                         lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-                                       range((len(lines) + 4 - 1) // 4)]
+                                       range((len(lines) + 4 - 1) // 4)]    # 4개 단위로 리스트 나눔
 
                         df = pd.DataFrame(lines_chunk, columns=['landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
                         df['x'] = df['x'].astype(float)
                         df['y'] = df['y'].astype(float)
                         df['z'] = df['z'].astype(float)
                         df['landmark_num'] = df['landmark_num'].astype(int)
-                        df = df.sort_values(by=['landmark_num'])  # 데이터 정렬 랜드마크와 일치 해야됨
+                        df = df.sort_values(by=['landmark_num'])  # 랜드마크랑 일치하기 위해 정렬
 
-                        predict = open(self.pre_fname[0], "r",encoding="UTF-8")  # predict 랜드마크 저장.
+                        # predict open 하고 dataframe 에 저장
+                        predict = open(self.pre_fname[0], "r",encoding="UTF-8")
                         lines2 = predict.read()
                         lines2 = lines2.replace("\n", ",")
                         lines2 = lines2.split(",")
@@ -166,15 +170,12 @@ class Preshin_UI(QWidget):
                         result = df.sub(df2)  # 결과값 데이터 프레임
                         result['landmark_num'] = df['landmark_num']
                         result[self.lbl_name[-2]] = (result['x'].pow(2) + result['x'].pow(2) + result['x'].pow(2)).pow(
-                            1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호
+                            1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용
                         result.drop('x', axis=1, inplace=True)  # 이름부분 뺌
                         result.drop('y', axis=1, inplace=True)
-                        result.drop('z', axis=1, inplace=True)
+                        result.drop('z', axis=1, inplace=True) # x,y,z는 필요없어서 버림
 
-                        # https://trading-for-chicken.tistory.com/43 제곱 거듭 제곱 해야함
-
-
-                        if len(df_sheet.columns) > 2:  # 이미 값이 들어있음
+                        if len(df_sheet.columns) > 2:  # 엑셀에 id가 이미 존재
                             self.comment += self.edt.toPlainText()
 
                             df_sheet = df_sheet.drop(['landmark_num', 'landmark_name', 'aver'], axis=1)  # 값만 추출
@@ -191,55 +192,38 @@ class Preshin_UI(QWidget):
                             df_sheet.loc[-1] = df_sheet.mean(axis=0)
 
                             # 맨 아래에 aver 추가
-                            landmark_name.append('aver')
+                            self.landmark_name.append('aver')
 
                             list_num = result['landmark_num'].tolist()
                             list_num.append('')
 
-                            print(df_sheet.to_dict('list'))
-
                             df_sheet.insert(0, 'landmark_num', list_num)
-                            df_sheet.insert(1, 'landmark_name', landmark_name)
-                            df_sheet.to_excel(file_name[0], startcol=0, startrow=3, index=False)
+                            df_sheet.insert(1, 'landmark_name', self.landmark_name)
+                            df_sheet.to_excel(self.file_name[0], startcol=0, startrow=3, index=False)
 
-                            wb = openpyxl.load_workbook(filename=file_name[0])
-                            ws = wb.active
+                            self.sheet_setting()    # 셀 시트 세팅
 
-                            ws.cell(row=1,
-                                    column=3).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}, Learning rate = {self.table.item(1, 1).text()}, optimizer = {self.table.item(2, 1).text()}, aug = {self.table.item(3, 1).text()} '
-                            ws.cell(row=2, column=3).value = f'comment : {self.comment}'
-                            ws.cell(row=3, column=3).value = 'id'
-                            ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=len(df_sheet.columns)-1)
-
-                            wb.save(filename=file_name[0])
-
-                        # 랜드마크 처음 입력
+                        # 엑셀에 id 처음 입력
                         else:
                             df_first = pd.DataFrame()
                             df_first.insert(0, self.lbl_name[-2], result[self.lbl_name[-2]])  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
                             df_first['aver'] = df_first.mean(axis=1)  # axis 1 열  마지막 열에 key: aver/ mean 평균 추가
                             df_first.loc[-1] = df_first.mean(axis=0)  # axis 0 행  마지막 행에 평균 추가
 
-                            landmark_name.append('aver')  # 맨 아래에 aver 추가
+                            self.landmark_name.append('aver')  # 맨 아래에 aver 추가
 
                             list_num = result['landmark_num'].tolist()
                             list_num.append('')
 
                             df_first.insert(0, 'landmark_num', result['landmark_num'])
-                            df_first.insert(1, 'landmark_name', landmark_name)
+                            df_first.insert(1, 'landmark_name', self.landmark_name)
 
-                            df_first.to_excel(file_name[0], startcol=0, startrow=3, index=False)  # C:\woo_project\AI\root 예시 #
+                            df_first.to_excel(self.file_name[0], startcol=0, startrow=3, index=False)  # C:\woo_project\AI\root 예시 #
 
-                            wb = openpyxl.load_workbook(filename=file_name[0])
-                            ws = wb.active
-
-                            ws.cell(row=1,
-                                    column=3).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}, Learning rate = {self.table.item(1, 1).text()}, optimizer = {self.table.item(2, 1).text()}, aug = {self.table.item(3, 1).text()} '
-                            ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
-                            ws.cell(row=3, column=3).value = 'id'
-                            wb.save(filename=file_name[0])
+                            self.sheet_setting()
 
                             self.comment += self.edt.toPlainText()
+
                         self.edt.setPlainText(self.comment)
 
                 else:
@@ -247,12 +231,51 @@ class Preshin_UI(QWidget):
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             self.messagebox("label 또는 predict 경로를 확인하세요.")
 
-    def sheet_color(self):
-        yellow_color = PatternFill(start_color='ffff99', end_color='ffff99', fill_type='solid')
-        red_color = PatternFill(start_color='ff9999', end_color='ff9999', fill_type='solid')
-        green_color = PatternFill(start_color='ff99ff', end_color='ff99ff', fill_type='solid')
-        blue_color = PatternFill(start_color='9999ff', end_color='9999ff', fill_type='solid')
-        gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
+    def sheet_style(self):
+        self.yellow_color = PatternFill(start_color='ffffb3', end_color='ffffb3', fill_type='solid')
+        self.red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
+        self.green_color = PatternFill(start_color='c1f0c1', end_color='c1f0c1', fill_type='solid')
+        self.blue_color = PatternFill(start_color='b3d9ff', end_color='b3d9ff', fill_type='solid')
+        self.blue_color2 = PatternFill(start_color='ccf5ff', end_color='ccf5ff', fill_type='solid')
+        self.gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
+
+        self.thin_border = Border(left=borders.Side(style='thin'),
+                             right=borders.Side(style='thin'),
+                             top=borders.Side(style='thin'),
+                             bottom=borders.Side(style='thin'))
+
+    def sheet_setting(self):
+        wb = openpyxl.load_workbook(filename=self.file_name[0])
+        ws = wb.active
+
+        ws.cell(row=1,
+                column=3).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}, Learning rate = {self.table.item(1, 1).text()}, optimizer = {self.table.item(2, 1).text()}, aug = {self.table.item(3, 1).text()} '
+        ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
+        ws.cell(row=3, column=3).value = 'Patient_ID'
+        ws.cell(3, 3).fill = self.blue_color
+        ws.cell(4, 1).fill = self.blue_color
+        ws.cell(4, 2).fill = self.blue_color
+
+        for j in range(len(self.landmark_name) - 1):
+            ws.cell(5 + j, 1).border = self.thin_border
+            ws.cell(5 + j, 1).fill = self.green_color
+            ws.cell(5 + j, 2).border = self.thin_border
+            ws.cell(5 + j, 2).fill = self.yellow_color
+
+        for row in range(5, ws.max_row):
+            ws.cell(row=row, column=ws.max_column).fill = self.blue_color2
+
+        for col in range(3, ws.max_column+1):
+            for row in range(5, ws.max_row):
+                if float(ws.cell(row=row, column=col).value) > 10:  # 특정 수치 이상 이면 색상 변함
+                    ws.cell(row=row, column=col).fill = self.red_color
+                    ws.cell(row=row, column=col).border = self.thin_border
+                    ws.cell(row=4, column=col).fill = self.gray_color
+
+        ws.cell(4, ws.max_column).fill = self.blue_color
+
+        ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column-1)
+        wb.save(filename=self.file_name[0])
 
     def messagebox(self, i):
         signBox = QMessageBox()
