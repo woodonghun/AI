@@ -15,7 +15,7 @@ class Main(QWidget):
         btn_preshin.clicked.connect(self.btn_preshin_clicked)
 
         self.setWindowTitle('AI')
-        self.setGeometry(500, 300, 100, 100)
+        self.setGeometry(500, 300, 50, 100)
         self.show()
 
     def btn_preshin_clicked(self):
