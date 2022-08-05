@@ -12,10 +12,11 @@ class Main(QWidget):
     def initUI(self):
         btn_preshin = QPushButton(self)
         btn_preshin.setText("preshin")
+        btn_preshin.setGeometry(20, 35, 100, 20)
         btn_preshin.clicked.connect(self.btn_preshin_clicked)
 
         self.setWindowTitle('AI')
-        self.setGeometry(500, 300, 50, 100)
+        self.setGeometry(500, 300, 150, 150)
         self.show()
 
     def btn_preshin_clicked(self):

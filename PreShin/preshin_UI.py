@@ -1,6 +1,6 @@
 import ast
 
-import numpy as np
+from PySide2.QtCore import Qt
 from openpyxl.styles import Border, borders, Protection
 import openpyxl
 from PySide2.QtWidgets import QWidget, QPushButton, QFileDialog, QDialog, QLabel, QTableWidget, \
@@ -47,41 +47,51 @@ class Preshin_UI(QWidget):
         self.table.setItem(3, 1, QTableWidgetItem(self.value[3]))
 
         self.table.setHorizontalHeaderLabels(["name", "Value"])
-        self.table.setGeometry(20, 180, 180, 145)
+        self.table.setGeometry(20, 195, 180, 145)
 
         btn_pre_path = QPushButton(self.dialog)
         btn_lbl_path = QPushButton(self.dialog)
         btn_export = QPushButton(self.dialog)
+        btn_manual = QPushButton(self.dialog)
 
         btn_pre_path.setText('Predict path')
         btn_lbl_path.setText('Label path')
         btn_export.setText('Export excel')
+        btn_manual.setText('open manual')
 
         self.lbl_pre = QLabel(self.dialog)
         self.lbl_lbl = QLabel(self.dialog)
         lbl_error = QLabel(self.dialog)
+        lbl_mm = QLabel(self.dialog)
+        lbl_comment = QLabel(self.dialog)
         self.edt_error = QLineEdit(self.dialog)
+        self.edt_error.setAlignment(Qt.AlignRight)
 
-        self.lbl_lbl.setGeometry(125, 16, 250, 30)
-        self.lbl_pre.setGeometry(125, 41, 250, 30)
-        lbl_error.setGeometry(220, 180, 100, 20)
-        self.edt_error.setGeometry(220, 205, 50, 20)
+        self.lbl_lbl.setGeometry(125, 31, 250, 30)
+        self.lbl_pre.setGeometry(125, 56, 250, 30)
+        lbl_error.setGeometry(220, 195, 100, 20)
+        lbl_mm.setGeometry(270, 220, 50, 20)
+        lbl_comment.move(20, 90)
+        self.edt_error.setGeometry(220, 220, 50, 20)
 
-        lbl_error.setText('허용 오차 범위')
+        lbl_error.setText('error safe zone')
+        lbl_mm.setText('mm')
+        lbl_comment.setText('comment')
 
         self.edt_error.setText(self.value[7])
-
-        btn_lbl_path.setGeometry(20, 20, 100, 20)
-        btn_pre_path.setGeometry(20, 45, 100, 20)
-        btn_export.setGeometry(20, 335, 180, 30)
+        btn_manual.setGeometry(20, 10, 100, 20)
+        btn_lbl_path.setGeometry(20, 35, 100, 20)
+        btn_pre_path.setGeometry(20, 60, 100, 20)
+        btn_export.setGeometry(20, 350, 180, 30)
 
         btn_lbl_path.clicked.connect(self.btn_lbl_clicked)
         btn_pre_path.clicked.connect(self.btn_pre_clicked)
         btn_export.clicked.connect(self.btn_export_clicked)
+        btn_manual.clicked.connect(self.btn_manual_clicked)
 
         self.edt = QPlainTextEdit(self.dialog)
         self.edt.setPlainText(self.value[4])
-        self.edt.setGeometry(20, 75, 300, 100)
+        self.edt.setGeometry(20, 105, 300, 80)
 
         self.dialog.setWindowTitle('AI')
         self.dialog.setGeometry(500, 300, 370, 420)
@@ -93,7 +103,7 @@ class Preshin_UI(QWidget):
         self.lbl_id = QFileDialog.getOpenFileName(self, self.tr("Openfile"), self.value[6])  # 창 title, 처음 위치
         self.lbl_lbl.setText(self.lbl_id[0])
         name = self.lbl_id[0].replace('.', '/')
-        self.lbl_name = name.split('/')
+        self.lbl_name = name.split('/')     # 파일명 뒤에 환자 id를 가져오기 위해 사용
 
         label = open(self.lbl_id[0], "r", encoding="UTF-8")
         lines = label.read()
@@ -104,17 +114,17 @@ class Preshin_UI(QWidget):
 
         self.lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
                             range((len(lines) + 4 - 1) // 4)]  # 4개 단위로 리스트 나눔 (id,x,y,z)
+
         lines_chunk_num = []
         for i in range(len(self.lines_chunk)):
-            lines_chunk_num.append(self.lines_chunk[i][0])
+            lines_chunk_num.append(self.lines_chunk[i][0])  # 빈 리스트에 label에서 가져온 landmark번호만 따로 저장
 
         set_lines_chunk_num = set(lines_chunk_num)
         set_landmark_value = set(self.landmark_value)
         empty = set_lines_chunk_num - set_landmark_value
-        empty_list = list(empty)    # 차집합으로 landmark.dat에 없는 num를 찾음
+        empty_list = list(empty)    # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
 
         self.landmark_name = []  # 빈 리스트 생성
-
 
         # landmark 저장
         for i in range(len(self.lines_chunk)):
@@ -124,19 +134,14 @@ class Preshin_UI(QWidget):
                     continue
                 if j > len(self.landmark_value)-2:
                     for k in range(len(empty_list)):
-                        if empty_list[k] == self.lines_chunk[i][0] and empty_list[k] != '':
+                        if empty_list[k] == self.lines_chunk[i][0]:      # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('empty')
-
-        print(empty_list)
-        print(self.landmark_name)
-
-
 
     def btn_pre_clicked(self):
         self.pre_id = QFileDialog.getOpenFileName(self, self.tr("Open file"), self.value[5])
         self.lbl_pre.setText(self.pre_id[0])
         name = self.pre_id[0].replace('.', '/')
-        self.pre_name = name.split('/')  # 파일명 뒤에 환자 id를 가져오기 위해 사용
+        self.pre_name = name.split('/')
 
         # predict open 하고 dataframe 에 저장
         predict = open(self.pre_id[0], "r", encoding="UTF-8")
@@ -147,6 +152,9 @@ class Preshin_UI(QWidget):
             del lines2[-1]  # 마지막 빈 칸 제거
         self.lines_chunk2 = [lines2[i * 4:(i + 1) * 4] for i in
                              range((len(lines2) + 4 - 1) // 4)]
+
+    def btn_manual_clicked(self):
+        fname = QFileDialog.getOpenFileName(self,'open file','./')
 
     def btn_export_clicked(self):
         # lbl, pre 둘다 선택
@@ -162,16 +170,15 @@ class Preshin_UI(QWidget):
                 if self.file_name[0] != '':
 
                     df_sheet = pd.read_excel(self.file_name[0],sheet_name='Sheet1', header=3,
-                                             engine='openpyxl')  # result xlsx 가져 오면 df_sheet index 와 num 가 동일하게 됨
+                                             engine='openpyxl')  # 4행부터 저장해서 header=3 부터 읽음
 
                     # 엑셀에 id 이미 존재함
                     if self.lbl_name[-2] in df_sheet.columns:
                         self.messagebox("이미 존재 하는 id 입니다")
                     # 엑셀에 id 없음
                     else:
-                        writer = pd.ExcelWriter(self.file_name[0], engine='openpyxl')
                         self.sheet_style()
-                        # label open 하고 dataframe 에 저장
+                        writer = pd.ExcelWriter(self.file_name[0], engine='openpyxl')
                         df = pd.DataFrame(self.lines_chunk, columns=['landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
 
                         df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
@@ -191,11 +198,11 @@ class Preshin_UI(QWidget):
                         df2['landmark_num'] = df2['landmark_num'].astype(int)
                         df2 = df2.sort_values(by='landmark_num')
 
-                        result = df.sub(df2)  # 결과값 데이터 프레임 df-df2 ///정렬됨
-                        result['landmark_num'] = df['landmark_num']  # 정렬된 df[landmark_num] 넣음
+                        result = df.sub(df2)  # 결과값 데이터 프레임 df-df2
+                        result['landmark_num'] = df['landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
 
                         df_landmark = pd.DataFrame(self.lines_chunk2, columns=['landmark_num', 'x', 'y',
-                                                                               'z'])  # 랜드마크 번호, 이름 따로 dataframe 생성
+                                                                               'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성
                         df_landmark['landmark_num'] = df_landmark['landmark_num'].astype(int)
                         df_landmark.insert(1, 'landmark_name', self.landmark_name)
                         df_landmark.drop('x', axis=1, inplace=True)
@@ -242,27 +249,23 @@ class Preshin_UI(QWidget):
 
                         self.df_result = df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
-                                           index=False, sheet_name='Sheet1')  # C:\woo_project\AI\root 예시 #
+                                           index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장
 
                         # 시트 2
                         self.sheet2_value()
 
                         df_sheet2_name_aver = pd.DataFrame()
                         df_sheet2_name_aver['name'] = self.df_result['landmark_num'].astype(str) + '[' + self.df_result[
-                            'landmark_name'] + ']'
+                            'landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
                         df_sheet2_name_aver['aver'] = self.df_result['aver']
-                        df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])
+                        df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1]) # 마지막 줄 제거
 
-                        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='name', how='left')
-                        print(df_sheet2)
+                        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='name', how='left')   # 2[Sella] aver 형태로 합침
+                        print(df_sheet2)                                                                    # 빈 칸 Nan 으로 합쳐짐
                         df_sheet2.to_excel(writer, startcol=0, startrow=3,
                                            index=False, sheet_name='Sheet2')
-                        #wb = openpyxl.load_workbook(self.file_name[0])
-                        #wb.create_sheet('sheet2', 1)
-                        #ws = wb.active
 
-                        #wb.save(self.file_name[0])
-                        writer.save()
+                        writer.save()   # Sheet1, Sheet2 저장
                         self.sheet_setting()
                         ############
 
@@ -381,7 +384,7 @@ class Preshin_UI(QWidget):
         ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
         wb.save(filename=self.file_name[0])
 
-    def messagebox(self, i):
+    def messagebox(self, i: str):
         signBox = QMessageBox()
         signBox.setWindowTitle("Warning")
         signBox.setText(i)
@@ -398,24 +401,21 @@ class Preshin_UI(QWidget):
         group_key = list(group.keys())
         group_value = list(group.values())
 
-        ################
         sheet2_group = []
         for i in range(len(group_key)):
             for j in range(len(group_value[i])):
-                for k in range(len(self.landmark_name_value)):
+                for k in range(len(self.landmark_name_value)):      # landmark_name_value = 2[Sella] 형태
                     name = self.landmark_name_value[k].split('[')
-                    if str(group_value[i][j]) == name[0]:
-                        group_value[i][j] = self.landmark_name_value[k]
+                    if str(group_value[i][j]) == name[0]:   # name[0] = 랜드마크 번호
+                        group_value[i][j] = self.landmark_name_value[k] # value 즉 num 가 2[Sella] 형태가 됨
 
-        ################
         for i in range(len(group_key)):
             sheet2_group.append(group_key[i])
             for j in range(len(group_value[i])):
                 sheet2_group.append(group_value[i][j])
-            sheet2_group.append('kkkk')
+            sheet2_group.append('kkkk')     # group 변경 할 때 마다 빈칸 추가
         self.df_sheet2_name = pd.DataFrame()
         self.df_sheet2_name.insert(0, 'name', sheet2_group)
-        print(self.df_sheet2_name)
 
     def dialog_close(self):
         self.dialog.close()
