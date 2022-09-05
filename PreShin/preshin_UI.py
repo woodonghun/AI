@@ -16,6 +16,10 @@ from openpyxl.styles import PatternFill
 # 허용 오차 범위
 
 
+def btn_manual_clicked():
+    os.startfile('C:/woo_project/AI/AI_manual.pdf')    # 메뉴얼 오픈
+
+
 class Preshin_UI(QWidget):
     def __init__(self):
         super().__init__()
@@ -25,11 +29,12 @@ class Preshin_UI(QWidget):
         self.dialog_close()
 
     def initUI(self):
-
-        txt = open("C:/woo_project/AI/comment.txt", 'r')
-        value = txt.read()
-        self.value = value.split(',')
-        txt.close()
+        batch = '4'
+        rate = '2e-4'
+        optimizer = 'adam'
+        aug = '0'
+        comment = 'write comment'
+        safe_zone = '3'
 
         self.table = QTableWidget(4, 2, self.dialog)
         self.table.setSortingEnabled(False)         # 정렬기능
@@ -39,13 +44,13 @@ class Preshin_UI(QWidget):
         self.table.setColumnWidth(1, 80)
 
         self.table.setItem(0, 0, QTableWidgetItem('Batch size'))
-        self.table.setItem(0, 1, QTableWidgetItem(self.value[0]))
+        self.table.setItem(0, 1, QTableWidgetItem(batch))
         self.table.setItem(1, 0, QTableWidgetItem('Learning rate'))
-        self.table.setItem(1, 1, QTableWidgetItem(self.value[1]))
+        self.table.setItem(1, 1, QTableWidgetItem(rate))
         self.table.setItem(2, 0, QTableWidgetItem('Optimizer'))
-        self.table.setItem(2, 1, QTableWidgetItem(self.value[2]))
+        self.table.setItem(2, 1, QTableWidgetItem(optimizer))
         self.table.setItem(3, 0, QTableWidgetItem('Aug'))
-        self.table.setItem(3, 1, QTableWidgetItem(self.value[3]))
+        self.table.setItem(3, 1, QTableWidgetItem(aug))
 
         self.table.setHorizontalHeaderLabels(["Name", "Value"])
         self.table.setGeometry(20, 195, 180, 145)
@@ -79,7 +84,7 @@ class Preshin_UI(QWidget):
         lbl_mm.setText('mm')
         lbl_comment.setText('Comment')
 
-        self.edt_error.setText(self.value[7])
+        self.edt_error.setText(safe_zone)
         btn_manual.setGeometry(20, 10, 100, 20)
         btn_lbl_path.setGeometry(20, 35, 100, 20)
         btn_pre_path.setGeometry(20, 60, 100, 20)
@@ -88,10 +93,10 @@ class Preshin_UI(QWidget):
         btn_lbl_path.clicked.connect(self.btn_lbl_clicked)
         btn_pre_path.clicked.connect(self.btn_pre_clicked)
         btn_export.clicked.connect(self.btn_export_clicked)
-        btn_manual.clicked.connect(self.btn_manual_clicked)
+        btn_manual.clicked.connect(btn_manual_clicked)
 
         self.edt = QPlainTextEdit(self.dialog)
-        self.edt.setPlainText(self.value[4])
+        self.edt.setPlainText(comment)
         self.edt.setGeometry(20, 105, 300, 80)
 
         self.dialog.setWindowTitle('AI')
@@ -101,86 +106,108 @@ class Preshin_UI(QWidget):
     def btn_lbl_clicked(self):
         self.landmark()
 
-        self.lbl_id = QFileDialog.getOpenFileName(self, self.tr("Openfile"), self.value[6])    # 창 title, 처음 위치
-        self.lbl_lbl.setText(self.lbl_id[0])
-        name = self.lbl_id[0].replace('.', '/')
-        self.lbl_name = name.split('/')    # 파일명 뒤에 환자 id를 가져오기 위해 사용
+        self.lbl_id = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root', QFileDialog.ShowDirsOnly)    # 창 title, 주소 나중에 변경
+        self.lbl_lbl.setText(str(self.lbl_id))
 
-        label = open(self.lbl_id[0], "r", encoding="UTF-8")
+        self.lbl_list = os.listdir(str(self.lbl_id))     # 경로에 있는 파일 읽기
+
+        self.compare_landmark()
+    def btn_pre_clicked(self):
+        self.pre_id = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root', QFileDialog.ShowDirsOnly)    # 주소 나중에 변경
+        self.lbl_pre.setText(self.pre_id)
+
+        self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
+
+    # id정렬
+    def set_pre_lbl(self):
+        lbl = [i.split('.')[0] for i in self.lbl_list]
+        set_lbl = set(self.lbl_list)
+        set_pre = set(self.pre_list)
+        only_lbl = set_lbl - set_pre
+        only_pre = set_pre - set_lbl
+
+        id = list(set_lbl & set_pre)    # id 정렬 set 함수는 정렬 안되서 나옴
+        id = [b.split('.')[0] for b in id]
+        id.sort()
+        id.reverse()
+        self.id_list = [(j+'.txt') for j in id]
+
+    def compare_landmark(self):
+        label = open(str(self.lbl_id + '/' + self.lbl_list[0]), "r", encoding="UTF-8")
         lines = label.read()
         lines = lines.replace("\n", ",")
         lines = lines.split(",")
         if lines[-1] == '':
-            del lines[-1]    # 마지막 빈 칸 제거
+            del lines[-1]  # 마지막 빈 칸 제거
 
         self.lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-                            range((len(lines) + 4 - 1) // 4)]    # 4개 단위로 리스트 나눔 (id,x,y,z)
+                            range((len(lines) + 4 - 1) // 4)]
 
         lines_chunk_num = []
         for i in range(len(self.lines_chunk)):
-            lines_chunk_num.append(self.lines_chunk[i][0])    # 빈 리스트에 label에서 가져온 landmark번호만 따로 저장
+            lines_chunk_num.append(self.lines_chunk[i][0])  # 빈 리스트에 label에서 가져온 landmark번호만 따로 저장
 
         set_lines_chunk_num = set(lines_chunk_num)
         set_landmark_value = set(self.landmark_value)
         empty = set_lines_chunk_num - set_landmark_value
-        empty_list = list(empty)    # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
+        empty_list = list(empty)  # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
 
-        self.landmark_name = []    # 빈 리스트 생성
+        self.landmark_name = []  # 빈 리스트 생성
 
         # landmark 저장
         for i in range(len(self.lines_chunk)):
             for j in range(len(self.landmark_value)):
-                if self.lines_chunk[i][0] == self.landmark_value[j]:     # 비교후 같은 값을 landmark_name 에 리스트로 추가
-                    self.landmark_name.append(self.landmark_key[j])      # landmark key : id, value : number
+                if self.lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
+                    self.landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
                     continue
-                if j > len(self.landmark_value)-2:
+                if j > len(self.landmark_value) - 2:
                     for k in range(len(empty_list)):
-                        if empty_list[k] == self.lines_chunk[i][0]:      # 없는 num 와 비교후 같으면 empty 저장
-                            self.landmark_name.append('Empty')
-
-    def btn_pre_clicked(self):
-        self.pre_id = QFileDialog.getOpenFileName(self, self.tr("Open file"), self.value[5])
-        self.lbl_pre.setText(self.pre_id[0])
-        name = self.pre_id[0].replace('.', '/')
-        self.pre_name = name.split('/')
-
-        # predict open 하고 dataframe 에 저장
-        predict = open(self.pre_id[0], "r", encoding="UTF-8")
-        lines2 = predict.read()
-        lines2 = lines2.replace("\n", ",")
-        lines2 = lines2.split(",")
-        if lines2[-1] == '':
-            del lines2[-1]  # 마지막 빈 칸 제거
-        self.lines_chunk2 = [lines2[i * 4:(i + 1) * 4] for i in
-                             range((len(lines2) + 4 - 1) // 4)]
-
-    def btn_manual_clicked(self):
-        os.startfile('C:/woo_project/AI/AI_manual.pdf') # 메뉴얼 오픈
+                        if empty_list[k] == self.lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
+                            self.landmark_name.append('None')
 
     def btn_export_clicked(self):
         # lbl, pre 둘다 선택
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
-            # 환자 id 일치 x
-            if self.lbl_name[-2] != self.pre_name[-2]:
-                self.messagebox("label 과 predict의 환자 id가 일치하지 않습니다.")
-            # 환자 id 일치 o
-            else:
-                self.file_name = QFileDialog.getSaveFileName(self, self.tr("Save Data file"), "C:/woo_project/AI/root",
-                                                             self.tr("Data Files(*.xlsx)"))  # 창 title, 위치, 확장자
+                # self.file_name = QFileDialog.getSaveFileName(self, self.tr("Save Data file"), "C:/woo_project/AI/root",
+                #                                             self.tr("Data Files(*.xlsx)"))  # 창 title, 위치, 확장자
                 # 저장 파일 선택 했을 때
-                if self.file_name[0] != '':
 
-                    df_sheet = pd.read_excel(self.file_name[0],sheet_name='Sheet1', header=3,
-                                             engine='openpyxl')  # 4행부터 저장해서 header=3 부터 읽음
+                file_name = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root',
+                                                               QFileDialog.ShowDirsOnly)
+                if file_name != '':
+                    df_sheet = pd.DataFrame()
+                    self.set_pre_lbl()    # id 정렬
+                    wb = openpyxl.Workbook()
+                    self.new_xlsx = file_name+'/report.xlsx'
+                    wb.save(self.new_xlsx)
 
-                    # 엑셀에 id 이미 존재함
-                    if self.lbl_name[-2] in df_sheet.columns:
-                        self.messagebox("이미 존재 하는 id 입니다")
-                    # 엑셀에 id 없음
-                    else:
+                    self.sheet2_value()
+
+                    for i in range(len(self.id_list)):
+                        name = self.id_list[i].split('/')
+                        label = open(str(self.lbl_id + '/' + self.id_list[i]), "r", encoding="UTF-8")  # 파일 하나씩하기 위해선?
+                        lines = label.read()
+                        lines = lines.replace("\n", ",")
+                        lines = lines.split(",")
+                        if lines[-1] == '':
+                            del lines[-1]  # 마지막 빈 칸 제거
+
+                        lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
+                                        range((len(lines) + 4 - 1) // 4)]  # 4개 단위로 리스트 나눔 (id,x,y,z)
+
+                        predict = open(str(self.pre_id + '/' + self.id_list[i]), "r", encoding="UTF-8")
+                        lines2 = predict.read()
+                        lines2 = lines2.replace("\n", ",")
+                        lines2 = lines2.split(",")
+                        if lines2[-1] == '':
+                            del lines2[-1]  # 마지막 빈 칸 제거
+                        lines_chunk2 = [lines2[i * 4:(i + 1) * 4] for i in
+                                         range((len(lines2) + 4 - 1) // 4)]
+
+
                         self.sheet_style()
-                        writer = pd.ExcelWriter(self.file_name[0], engine='openpyxl')
-                        df = pd.DataFrame(self.lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
+                        writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
+                        df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
 
                         df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
                         df['y'] = df['y'].astype(float)
@@ -189,7 +216,7 @@ class Preshin_UI(QWidget):
                         df = df.replace(to_replace=-99999.00, value=pd.NA)  # float 라서 -99999.00 -> 결측치로 변경
                         df = df.sort_values(by='Landmark_num')  # 데이터 정렬
 
-                        df2 = pd.DataFrame(self.lines_chunk2,
+                        df2 = pd.DataFrame(lines_chunk2,
                                            columns=['Landmark_num', 'x', 'y', 'z'])  # predict 데이터 프래임
 
                         df2['x'] = df2['x'].astype(float)
@@ -202,7 +229,7 @@ class Preshin_UI(QWidget):
                         result = df.sub(df2)  # 결과값 데이터 프레임 df-df2
                         result['Landmark_num'] = df['Landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
 
-                        df_landmark = pd.DataFrame(self.lines_chunk2, columns=['Landmark_num', 'x', 'y',
+                        df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y',
                                                                                'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성
                         df_landmark['Landmark_num'] = df_landmark['Landmark_num'].astype(int)
                         df_landmark.insert(1, 'Landmark_name', self.landmark_name)
@@ -212,81 +239,65 @@ class Preshin_UI(QWidget):
                         df_landmark = df_landmark.sort_values(by='Landmark_num')  # 데이터 정렬
 
                         df_landmark = df_landmark.append({'Landmark_num': 0, 'Landmark_name': 'Aver'},
-                                                         ignore_index=True)
+                                                         ignore_index=True) # 마지막줄에 추가
 
-                        result[self.lbl_name[-2]] = (result['x'].pow(2) + result['y'].pow(2) + result['z'].pow(2)).pow(
+                        result[name[0]] = (result['x'].pow(2) + result['y'].pow(2) + result['z'].pow(2)).pow(
                             1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용
                         result.drop('x', axis=1, inplace=True)
                         result.drop('y', axis=1, inplace=True)
                         result.drop('z', axis=1, inplace=True)  # x,y,z제거
-                        result[self.lbl_name[-2]].loc[-1] = result[self.lbl_name[-2]].mean(axis=0)  # 평균 axis = 0 : 행방향, axis =1 : 열방향
-                        list_land = result[self.lbl_name[-2]].tolist()  # 다음 df에 넣기 위해 list로 만듬
-
-                        if len(df_sheet.columns) > 2:  # 엑셀에 id가 이미 존재
-                            # df_sheet는 이미 정렬된 생태
-                            df_sheet = df_sheet.drop(['Landmark_num', 'Landmark_name', 'Aver'], axis=1)  # id의 값만 추출
-                            df_sheet = df_sheet.drop(df_sheet.index[len(df_sheet) - 1])  # 마지막 행 삭제
-                            df_sheet.insert(len(df_sheet.columns), self.lbl_name[-2], list_land)  # 값 추가
-                            df_sheet.loc[len(df_sheet)] = df_sheet.mean(axis=0)
+                        result[name[0]].loc[-1] = result[name[0]].mean(axis=0)  # 평균 axis = 0 : 행방향, axis =1 : 열방향
+                        list_land = result[name[0]].tolist()  # 다음 df에 넣기 위해 list로 만듬
 
                         # 엑셀에 id 처음 입력
-                        else:
-                            df_sheet = pd.DataFrame()
-                            df_sheet.insert(0, self.lbl_name[-2],
-                                            list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
-                            df_sheet.loc[len(df_sheet)] = df_sheet.mean(axis=0)
+                        patient_id = name[0].split('.')[0]
 
-                        data_sum = df_sheet.sum()  # 각각 id의 sum
-                        id_sum = data_sum.sum()  # data sum 의 sum
-                        data_count = df_sheet.count()  # df_sheet 의 각각 id의 value 개수
-                        data_count = data_count.sum()  # id의 value 개수 합
-                        aver = id_sum / data_count  # 전체 평균
+                        df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
 
-                        df_sheet['Aver'] = df_sheet.mean(axis=1)  # 마지막 열에 평균 추가
+                    # 여기까지 for문 돌리고 df에 하나씩 넣는거 만들어야함
 
-                        df_result = pd.concat([df_landmark, df_sheet], axis=1)  # 랜드마크, value 데이터 프레임 합치기
-                        df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
+                    df_sheet.loc[len(df_sheet)] = df_sheet.mean(axis=0)
 
+                    data_sum = df_sheet.sum()  # 각각 id의 sum
+                    id_sum = data_sum.sum()  # data sum 의 sum
+                    data_count = df_sheet.count()  # df_sheet 의 각각 id의 value 개수
+                    data_count = data_count.sum()  # id의 value 개수 합
+                    aver = id_sum / data_count  # 전체 평균
 
-                        self.df_result = df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
-                        self.df_result.to_excel(writer, startcol=0, startrow=3,
+                    df_sheet['Aver'] = df_sheet.mean(axis=1)  # 마지막 열에 평균 추가
+
+                    df_result = pd.concat([df_landmark, df_sheet], axis=1)  # 랜드마크, value 데이터 프레임 합치기
+                    df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
+
+                    df_result = df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
+
+                    group = sum(self.group_num, [])
+                    self.number = [int(i.split('[')[0]) for i in group]
+                    self.number.append(0)
+                    self.df_result = df_result.query(f'Landmark_num == {self.number}')
+                    self.df_result.reset_index(inplace=True, drop= 'index')
+                    print(self.df_result)
+                    self.df_result.to_excel(writer, startcol=0, startrow=3,
                                            index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
                         # 시트 2
-                        self.sheet2_value()
 
-                        df_sheet2_name_aver = pd.DataFrame()
-                        df_sheet2_name_aver['Name'] = self.df_result['Landmark_num'].astype(str) + '[' + self.df_result[
+
+                    df_sheet2_name_aver = pd.DataFrame()
+                    df_sheet2_name_aver['Name'] = self.df_result['Landmark_num'].astype(str) + '[' + self.df_result[
                             'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
-                        df_sheet2_name_aver['Aver'] = self.df_result['Aver']
-                        df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1]) # 마지막 줄 제거
+                    df_sheet2_name_aver['Aver'] = self.df_result['Aver']
+                    df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1]) # 마지막 줄 제거
 
-                        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name', how='left')   # 2[Sella] aver 형태로 합침
-                        print(df_sheet2)                                                                    # 빈 칸 Nan 으로 합쳐짐
-                        df_sheet2.to_excel(writer, startcol=0, startrow=3,
+                    df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name', how='left')   # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
+
+                    df_sheet2.to_excel(writer, startcol=0, startrow=3,
                                            index=False, sheet_name='Sheet2')
 
-                        writer.save()   # Sheet1, Sheet2 저장
-                        self.sheet_setting()
+                    writer.save()   # Sheet1, Sheet2 저장
+                    self.sheet1_setting()
                         ############
 
-                        # table, comment txt 에 저장 해서 다음에 불러올 때 그대로 사용 가능
-                        txt = open("C:/woo_project/AI/comment.txt", 'w')
-
-                        batch = self.table.item(0, 1).text()
-                        rate = self.table.item(1, 1).text()
-                        opti = self.table.item(2, 1).text()
-                        aug = self.table.item(3, 1).text()
-                        comment = self.edt.toPlainText()
-                        pre = self.pre_name[:-2]
-                        lbl = self.lbl_name[:-2]
-                        error = self.edt_error.text()
-                        pre_loc = "/".join(pre)
-                        lbl_loc = "/".join(lbl)
-                        info = batch, rate, opti, aug, comment, pre_loc, lbl_loc, error
-                        txt.write(','.join(info))
-
-                        txt.close()
                 else:
                     pass
         # label, predict 선택 되지 않았을 때
@@ -334,8 +345,8 @@ class Preshin_UI(QWidget):
                                   bottom=borders.Side(style='thin'))
 
     # 시트 색상,테두리 설정
-    def sheet_setting(self):
-        wb = openpyxl.load_workbook(filename=self.file_name[0])
+    def sheet1_setting(self):
+        wb = openpyxl.load_workbook(filename=self.new_xlsx)
         ws = wb['Sheet1']
 
         # table에 default값 출력
@@ -343,32 +354,35 @@ class Preshin_UI(QWidget):
                                         f', Learning rate = {self.table.item(1, 1).text()}' \
                                         f', optimizer = {self.table.item(2, 1).text()}' \
                                         f', aug = {self.table.item(3, 1).text()} '
+        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['B'].width = 20
 
         # comment에 default값 출력
+        print(len(set(self.number)))
         ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
         ws.cell(row=3, column=3).value = 'Patient_ID'
         ws.cell(3, 3).fill = self.blue_color
         ws.cell(4, 1).fill = self.blue_color
         ws.cell(4, 2).fill = self.blue_color
 
-        for j in range(len(self.landmark_name)):
+        for j in range(len(set(self.number))-1):
             ws.cell(5 + j, 1).border = self.thin_border
             ws.cell(5 + j, 1).fill = self.green_color
             ws.cell(5 + j, 2).border = self.thin_border
             ws.cell(5 + j, 2).fill = self.yellow_color
 
-        for row in range(5, ws.max_row):
+        for row in range(5, 5+len(set(self.number))):
             ws.cell(row=row, column=ws.max_column).fill = self.blue_color2
             ws.cell(row=row, column=ws.max_column).border = self.thin_border
 
         for col in range(3, ws.max_column):
-            ws.cell(row=ws.max_row, column=col).fill = self.blue_color2
-            ws.cell(row=ws.max_row, column=col).border = self.thin_border
+            ws.cell(row=4+len(set(self.number)), column=col).fill = self.blue_color2
+            ws.cell(row=4+len(set(self.number)), column=col).border = self.thin_border
 
         for col in range(3, ws.max_column + 1):
-            for row in range(5, ws.max_row + 1):
+            for row in range(5, 5+len(set(self.number))):
                 data = float(ws.cell(row=row, column=col).value)
-                if data > float(self.value[7]):  # 특정 수치 이상 이면 색상 변함
+                if data > float(self.edt_error.text()):  # 특정 수치 이상 이면 색상 변함
                     ws.cell(row=row, column=col).fill = self.red_color
                     ws.cell(row=row, column=col).border = self.thin_border
                 elif data == -99999:
@@ -377,18 +391,18 @@ class Preshin_UI(QWidget):
                     ws.cell(row=row, column=col).border = self.thin_border
                 ws.cell(row=4, column=col).fill = self.gray_color
 
-        for row in range(5, ws.max_row + 1):
-            if ws.cell(row=row,column=2).value == 'Empty':
+        for row in range(5, 5+len(set(self.number))-1):
+            if ws.cell(row=row,column=2).value == 'None':
                 ws.cell(row=row, column=2).fill = self.red_color
 
 
         ws.cell(4, ws.max_column).fill = self.blue_color
         ws.cell(4, ws.max_column).border = self.thin_border
-        ws.cell(ws.max_row, 2).fill = self.blue_color
-        ws.cell(ws.max_row, 2).border = self.thin_border
+        ws.cell(4+len(set(self.number)), 2).fill = self.blue_color
+        ws.cell(4+len(set(self.number)), 2).border = self.thin_border
 
         ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
-        wb.save(filename=self.file_name[0])
+        wb.save(filename=self.new_xlsx)
 
     def messagebox(self, i: str):
         signBox = QMessageBox()
@@ -401,11 +415,20 @@ class Preshin_UI(QWidget):
 
     def sheet2_value(self):
 
+        for i in range(len(self.id_list)):
+            name = self.id_list[i].split('/')
+            self.df_result.drop(name, axis=1, inplace=True)
+        self.df_result.drop('Landmark_name', axis=1, inplace=True)
+
         with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
 
         group_key = list(group.keys())
         group_value = list(group.values())
+        self.group_num = list(group.values())
+
+        average = pd.DataFrame(group)
+        print(average)
 
         sheet2_group = []
         for i in range(len(group_key)):
@@ -413,7 +436,15 @@ class Preshin_UI(QWidget):
                 for k in range(len(self.landmark_name_value)):      # landmark_name_value = 2[Sella] 형태
                     name = self.landmark_name_value[k].split('[')
                     if str(group_value[i][j]) == name[0]:   # name[0] = 랜드마크 번호
-                        group_value[i][j] = self.landmark_name_value[k] # value 즉 num 가 2[Sella] 형태가 됨
+                        group_value[i][j] = self.landmark_name_value[k]    # value 즉 num 가 2[Sella] 형태가 됨
+
+
+        for i in range(len(group_value)):
+            for j in range(len(group_value[i])):
+                if ']' in str(group_value[i][j]):
+                    pass
+                else:
+                    group_value[i][j] = str(group_value[i][j]) + '[None]'
 
         for i in range(len(group_key)):
             sheet2_group.append(group_key[i])
