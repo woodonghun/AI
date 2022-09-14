@@ -17,6 +17,15 @@ def btn_manual_clicked():
     os.startfile('C:/woo_project/AI/AI_manual.pdf')  # 메뉴얼 오픈
 
 
+def average(df):
+    data_sum = df.sum()  # 각각 id의 sum
+    id_sum = data_sum.sum()  # data sum 의 sum
+    data_count = df.count()  # df_sheet 의 각각 id의 value 개수
+    data_count = data_count.sum()  # id의 value 개수 합
+    avr = id_sum / data_count  # 전체 평균
+    return avr
+
+
 class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
@@ -32,7 +41,7 @@ class PreShin_UI(QWidget):
         aug = '0'
         comment = 'write comment'
         safe_zone = '3'
-        outlier = '15'
+        outlier = '25'
 
         self.table = QTableWidget(4, 2, self.dialog)
         self.table.setSortingEnabled(False)  # 정렬기능
@@ -81,13 +90,13 @@ class PreShin_UI(QWidget):
         self.lbl_lbl.setGeometry(125, 31, 250, 30)
         self.lbl_pre.setGeometry(125, 56, 250, 30)
         lbl_error.setGeometry(220, 195, 100, 20)
-        lbl_outlier.setGeometry(220, 225, 100, 20)
+        lbl_outlier.setGeometry(220, 245, 100, 20)
         lbl_mm.setGeometry(270, 220, 50, 20)
         lbl_comment.move(20, 90)
         lbl_xlsx_name.move(20, 355)
         lbl_xlsx.move(173, 355)
         self.edt_error.setGeometry(220, 220, 50, 20)
-        self.edt_outlier.setGeometry(220, 230, 50, 20)
+        self.edt_outlier.setGeometry(220, 270, 50, 20)
         self.edt_xlsx_name.setGeometry(70, 350, 103, 20)
 
         lbl_error.setText('Error Safe Zone')
@@ -98,6 +107,7 @@ class PreShin_UI(QWidget):
         lbl_xlsx.setText('.xlsx')
 
         self.edt_error.setText(safe_zone)
+        self.edt_outlier.setText(outlier)
         btn_manual.setGeometry(20, 10, 100, 20)
         btn_lbl_path.setGeometry(20, 35, 100, 20)
         btn_pre_path.setGeometry(20, 60, 100, 20)
@@ -125,7 +135,7 @@ class PreShin_UI(QWidget):
         # 폴더 경로 입력
         if self.lbl_id != '':
             self.lbl_list = os.listdir(str(self.lbl_id))  # 폴더 경로에 있는 파일 읽기
-            if self.lbl_list != []:    # 빈 폴더가 아닐 때
+            if self.lbl_list != []:  # 빈 폴더가 아닐 때
                 for i in range(len(self.lbl_list)):
                     path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
                     if ext != '.txt' or ext == '':
@@ -144,7 +154,7 @@ class PreShin_UI(QWidget):
                                                        QFileDialog.ShowDirsOnly)  # 주소 나중에 변경
         if self.pre_id != '':
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
-            if self.pre_list != []:
+            if self.pre_list != []:    # 빈 폴더가 아닐때
                 for i in range(len(self.pre_list)):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
                     if ext != '.txt' or ext == '':
@@ -229,8 +239,11 @@ class PreShin_UI(QWidget):
             del lines[-1]  # 마지막 빈 칸 제거
 
         # landmark, x, y, z 형태
-        lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-                       range((len(lines) + 4 - 1) // 4)]
+        # lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
+        #                range((len(lines) + 4 - 1) // 4)]
+        # landmark, x, y, z 형태
+        lines_chunk = [lines[i * 3:(i + 1) * 3] for i in
+                       range((len(lines) + 3 - 1) // 3)]
 
         # landmark 번호만 따로 저장
         lines_chunk_num = []
@@ -260,16 +273,20 @@ class PreShin_UI(QWidget):
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
-                self.loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
-                                                                 QFileDialog.ShowDirsOnly)
 
-                if self.loc_xlsx != '':  # 폴더 선택 했을때
-                    file = os.listdir(self.loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
-                    if self.edt_xlsx_name.text() + '.xlsx' not in file:  # 동일한 파일명이 없을때
+                loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
+                                                                 QFileDialog.ShowDirsOnly)
+                self.loc_xlsx = loc_xlsx + f'/{self.edt_xlsx_name.text()}_folder'
+                os.mkdir(self.loc_xlsx)
+
+                if loc_xlsx != '':  # 폴더 선택 했을때
+                    file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
+                    if self.edt_xlsx_name.text() + '_forder' not in file:  # 동일한 파일명이 없을때
                         df_sheet = pd.DataFrame()
                         self.set_pre_lbl()  # id 정렬
                         wb = openpyxl.Workbook()
                         self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
+                        self.new_xlsx_ouliter = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
@@ -282,9 +299,9 @@ class PreShin_UI(QWidget):
                             lines = lines.split(",")
                             if lines[-1] == '':
                                 del lines[-1]  # 마지막 빈 칸 제거
-
-                            lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-                                           range((len(lines) + 4 - 1) // 4)]  # 4개 단위로 리스트 나눔 (id,x,y,z)
+                            # 2D 3d로 바꿀려면 3을 4로 바꾸면됨
+                            lines_chunk = [lines[i * 3:(i + 1) * 3] for i in
+                                           range((len(lines) + 3 - 1) // 3)]  # 4개 단위로 리스트 나눔 (id,x,y,z) 3D
 
                             predict = open(str(self.pre_id + '/' + self.id_list[i]), "r", encoding="UTF-8")
                             lines2 = predict.read()
@@ -292,51 +309,63 @@ class PreShin_UI(QWidget):
                             lines2 = lines2.split(",")
                             if lines2[-1] == '':
                                 del lines2[-1]  # 마지막 빈 칸 제거
-                            lines_chunk2 = [lines2[i * 4:(i + 1) * 4] for i in
-                                            range((len(lines2) + 4 - 1) // 4)]
+                            # 2D
+                            lines_chunk2 = [lines2[i * 3:(i + 1) * 3] for i in
+                                            range((len(lines2) + 3 - 1) // 3)]
 
                             self.sheet_color()
-                            writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
-                            df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
+                            # 3D는 z 붙이기
 
+                            # df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
+                            df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
                             df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
                             df['y'] = df['y'].astype(float)
-                            df['z'] = df['z'].astype(float)
+                            # df['z'] = df['z'].astype(float)
                             df['Landmark_num'] = df['Landmark_num'].astype(int)
-                            df = df.replace(to_replace=-99999.00, value=pd.NA)  # float 라서 -99999.00 -> 결측치로 변경
+                            # df = df.replace(to_replace=[-99999.00,-28341.00,-23934.00,-22188.00,-22660.00], value=pd.NA)  # float 라서 -99999.00 -> 결측치로 변경
+                            df = df[df >= 0]
+
                             df = df.sort_values(by='Landmark_num')  # 데이터 정렬
 
+                            # df2 = pd.DataFrame(lines_chunk2,
+                            #                    columns=['Landmark_num', 'x', 'y', 'z'])  # predict 데이터 프래임 3D
                             df2 = pd.DataFrame(lines_chunk2,
-                                               columns=['Landmark_num', 'x', 'y', 'z'])  # predict 데이터 프래임
+                                               columns=['Landmark_num', 'x', 'y'])  # predict 데이터 프래임 2D
 
                             df2['x'] = df2['x'].astype(float)
                             df2['y'] = df2['y'].astype(float)
-                            df2['z'] = df2['z'].astype(float)
-                            df2 = df2.replace(to_replace=-99999.00, value=pd.NA)
+                            # df2['z'] = df2['z'].astype(float)
                             df2['Landmark_num'] = df2['Landmark_num'].astype(int)
+                            # df2 = df2.replace(to_replace=[-99999.00,-28341.00,-23934.00,-22188.00,-22660.00], value=pd.NA)  # float 라서 -99999.00 -> 결측치로 변경
+                            df2 = df2[df2 >= 0]
+
                             df2 = df2.sort_values(by='Landmark_num')
 
                             result = df.sub(df2)  # 결과값 데이터 프레임 df-df2
                             result['Landmark_num'] = df['Landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
 
+                            # df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y',
+                            #                                                   'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성 3D
                             df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y',
-                                                                              'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성
+                                                                              ])  # 랜드마크 번호, 이름에 대한 dataframe 생성 2D
                             df_landmark['Landmark_num'] = df_landmark['Landmark_num'].astype(int)
                             df_landmark.insert(1, 'Landmark_name', self.landmark_name)
                             df_landmark.drop('x', axis=1, inplace=True)
                             df_landmark.drop('y', axis=1, inplace=True)
-                            df_landmark.drop('z', axis=1, inplace=True)
+                            # df_landmark.drop('z', axis=1, inplace=True)
                             df_landmark = df_landmark.sort_values(by='Landmark_num')  # 데이터 정렬
 
                             new_df = pd.DataFrame({'Landmark_num': [0], 'Landmark_name': ['Aver']})
 
                             df_landmark = pd.concat([df_landmark, new_df], ignore_index=True)
 
-                            result[name[0]] = (result['x'].pow(2) + result['y'].pow(2) + result['z'].pow(2)).pow(
-                                1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용
+                            # result[name[0]] = (result['x'].pow(2) + result['y'].pow(2) + result['z'].pow(2)).pow(
+                            #     1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용 3D
+                            result[name[0]] = (result['x'].pow(2) + result['y'].pow(2)).pow(
+                                1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용 2D
                             result.drop('x', axis=1, inplace=True)
                             result.drop('y', axis=1, inplace=True)
-                            result.drop('z', axis=1, inplace=True)  # x,y,z제거
+                            # result.drop('z', axis=1, inplace=True)  # x,y,z제거
                             result[name[0]].loc[-1] = result[name[0]].mean(axis=0)  # 평균 axis = 0 : 행방향, axis =1 : 열방향
                             list_land = result[name[0]].tolist()  # 다음 df에 넣기 위해 list로 만듬
 
@@ -345,20 +374,25 @@ class PreShin_UI(QWidget):
 
                             df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
 
-                        data_sum = df_sheet.sum()  # 각각 id의 sum
-                        id_sum = data_sum.sum()  # data sum 의 sum
-                        data_count = df_sheet.count()  # df_sheet 의 각각 id의 value 개수
-                        data_count = data_count.sum()  # id의 value 개수 합
-                        aver = id_sum / data_count  # 전체 평균
+
+                        df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
+                        print(df_sheet_outlier)
+
+                        aver = average(df_sheet)
+                        aver_outlier = average(df_sheet_outlier)
+
+                        df_sheet_outlier['Aver'] = df_sheet_outlier.mean(axis=1)
+                        df_result_outlier = pd.concat([df_landmark, df_sheet_outlier], axis=1)
 
                         df_sheet['Aver'] = df_sheet.mean(axis=1)  # 마지막 열에 평균 추가
-
                         df_result = pd.concat([df_landmark, df_sheet], axis=1)  # 랜드마크, value 데이터 프레임 합치기
 
                         group = sum(self.group_num, [])
                         self.number = [int(i.split('[')[0]) for i in group]
                         self.number.append(0)
+
                         df_result = df_result.query(f'Landmark_num == {self.number}')
+                        df_result_outlier = df_result_outlier.query(f'Landmark_num == {self.number}')
 
                         # 측정값과 num,name 나누어서 다시 평균 만들기 현재 평균은 group을 제거한 값도 같이 평균한 값임
                         df_result1 = df_result.iloc[:, 0:2]
@@ -366,39 +400,41 @@ class PreShin_UI(QWidget):
                         df_result2.drop(df_result2.tail(1).index)
                         df_result2.loc[df.shape[0]] = df_result2.mean(axis=0)
 
+                        # outlier 세팅
+                        df_result2_outlier = df_result_outlier.iloc[:, 2: len(df_result_outlier.columns)]
+                        df_result2_outlier.drop(df_result_outlier.tail(1).index)
+                        df_result2_outlier.loc[df.shape[0]] = df_result2_outlier.mean(axis=0)
+                        # 기본
+
                         self.df_result = pd.concat([df_result1, df_result2], axis=1)
                         self.df_result = self.df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
                         self.df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
                         self.df_result.reset_index(inplace=True, drop='index')
+
+                        # 기본 세팅
+                        writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
                                                 index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
+                        # outlier 세팅
+                        self.df_result_outlier = pd.concat([df_result1, df_result2_outlier], axis=1)
+                        self.df_result_outlier = self.df_result_outlier.fillna(-99999)
+                        self.df_result_outlier.iat[-1, -1] = aver_outlier
+                        self.df_result_outlier.reset_index(inplace=True, drop='index')
+                        print(df_result2_outlier)
+                        writer_outlier = pd.ExcelWriter(self.new_xlsx_ouliter, engine='openpyxl')
+                        self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
+                                                        index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
+
                         # 시트 2
 
-                        df_sheet2_name_aver = pd.DataFrame()
-                        df_sheet2_name_aver['Name'] = self.df_result['Landmark_num'].astype(str) + '[' + self.df_result[
-                            'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
-                        df_sheet2_name_aver['Aver'] = self.df_result['Aver']
-                        df_sheet2_name_aver = df_sheet2_name_aver.drop(
-                            df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
+                        self.sheet2(self.df_result, writer, aver)
+                        self.sheet2(self.df_result_outlier, writer_outlier,aver_outlier)
 
-                        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name',
-                                                              how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
-
-                        df_sheet2.to_excel(writer, startcol=0, startrow=3,
-                                           index=False, sheet_name='Sheet2')
-
-                        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [aver]})
-
-                        df_sheet2 = pd.concat([new_df, df_sheet2])
-                        df_sheet2 = df_sheet2.fillna('None')
-                        df_sheet2.to_excel(writer, startcol=0, startrow=2,
-                                           index=False, sheet_name='Sheet2')
-
-                        writer.save()  # Sheet1, Sheet2 저장
-
-                        self.sheet1_setting()
-                        self.sheet2_setting()
+                        self.sheet1_setting(self.new_xlsx)
+                        self.sheet1_setting(self.new_xlsx_ouliter)
+                        self.sheet2_setting(self.new_xlsx)
+                        self.sheet2_setting(self.new_xlsx_ouliter)
                         ############
                         self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
                     else:
@@ -410,6 +446,29 @@ class PreShin_UI(QWidget):
         # label, predict 선택 되지 않았을 때
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             self.messagebox("label 또는 predict 경로를 확인 하세요.")
+
+    def sheet2(self, df, writer, average):
+        df_sheet2_name_aver = pd.DataFrame()
+        df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df[
+            'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
+        df_sheet2_name_aver['Aver'] = df['Aver']
+        df_sheet2_name_aver = df_sheet2_name_aver.drop(
+            df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
+
+        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name',
+                                              how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
+
+        df_sheet2.to_excel(writer, startcol=0, startrow=3,
+                           index=False, sheet_name='Sheet2')
+
+        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [average]})
+
+        df_sheet2 = pd.concat([new_df, df_sheet2])
+        df_sheet2 = df_sheet2.fillna('None')
+        df_sheet2.to_excel(writer, startcol=0, startrow=2,
+                           index=False, sheet_name='Sheet2')
+
+        writer.save()  # Sheet1, Sheet2 저장
 
     # 시트 색상, 테두리 스타일
     def sheet_color(self):
@@ -428,8 +487,8 @@ class PreShin_UI(QWidget):
                                   bottom=borders.Side(style='thin'))
 
     # 시트 색상,테두리 설정
-    def sheet1_setting(self):
-        wb = openpyxl.load_workbook(filename=self.new_xlsx)
+    def sheet1_setting(self, xlsx):
+        wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet1']
 
         # table 에 작성된 값 삽입
@@ -491,7 +550,7 @@ class PreShin_UI(QWidget):
 
         # Patient_ID 위에 있는 셀 병합
         ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
-        wb.save(filename=self.new_xlsx)
+        wb.save(filename=xlsx)
 
     def messagebox(self, i: str):
         signBox = QMessageBox()
@@ -504,7 +563,7 @@ class PreShin_UI(QWidget):
 
     def sheet2_value(self):  # 시트2 landmark 2[sella]형태로 만듬
 
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:    # group : { landmark 번호, ...}
+        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
 
         group_key = list(group.keys())
@@ -536,7 +595,7 @@ class PreShin_UI(QWidget):
         self.df_sheet2_name = pd.DataFrame()
         self.df_sheet2_name.insert(0, 'Name', sheet2_group)
 
-    def sheet2_setting(self):
+    def sheet2_setting(self, xlsx):
 
         with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
@@ -544,7 +603,7 @@ class PreShin_UI(QWidget):
         group_key = list(group.keys())
         group_value = list(group.values())
 
-        wb = openpyxl.load_workbook(filename=self.new_xlsx)
+        wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet2']
 
         # table에 default값 출력
@@ -555,8 +614,6 @@ class PreShin_UI(QWidget):
                                          f', aug = {self.table.item(3, 1).text()} '
 
         ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
-
-
 
         for row in range(5, ws.max_row + 1):
             data = ws.cell(row=row, column=2).value
@@ -636,16 +693,19 @@ class PreShin_UI(QWidget):
         ws['L5'].fill = self.red_color
         ws['L5'] = 'Error'
 
-        wb.save(filename=self.new_xlsx)
+        wb.save(filename=xlsx)
         # 그래프가 없는 시트2 불러옴 시트에서 평균값을 만들어서 다시 불러와야함
-        df = pd.read_excel(self.new_xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1])
+        df = pd.read_excel(xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1])
         df = df.replace(to_replace=' ', value=-0.0001)  # ' '결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
         df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
         df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
         df = round(df, 4)  # 소수 자리수
-        self.graph(df)
+        self.graph(df, xlsx)
 
-    def graph(self, df):  # 그래프 생성
+    def graph(self, df, xlsx):  # 그래프 생성
+        loc = xlsx.split('.')
+        loc = loc[0].split('/')
+        print(loc)
 
         with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
@@ -658,7 +718,7 @@ class PreShin_UI(QWidget):
         for i in range(len(key)):
             group_list.append(1 + len(value[i]))
 
-        graph = df    # 시트2 데이터 프레임
+        graph = df  # 시트2 데이터 프레임
         graph_dict = graph.to_dict('list')
         graph_value = list(graph_dict.values())
 
@@ -666,11 +726,11 @@ class PreShin_UI(QWidget):
         image_insert = 7  # 이미지 삽입 시작 셀
 
         # 폴더 생성
-        location = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_image'
+        location = self.loc_xlsx + f'/{loc[-1]}_image'
         os.mkdir(location)
 
         # 이미지를 엑셀에 넣기 위함
-        wb = openpyxl.load_workbook(filename=self.new_xlsx)
+        wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet2']
 
         # total_aver 이름, 측정값 추가
@@ -706,9 +766,9 @@ class PreShin_UI(QWidget):
         img = Image(location + f'/{group_total_name[0]}.png')  # 파일 불러옴
         img.width = 650  # 픽셀 단위 사이즈 변경
         img.height = 1000
-        ws.add_image(img, 'O2')
+        ws.add_image(img, 'O3')
 
-        wb.save(filename=self.new_xlsx)
+        wb.save(filename=xlsx)
         # 최대치 ----- 20 ~ 30
         # 소수점 3자리
 
@@ -716,8 +776,8 @@ class PreShin_UI(QWidget):
     def vertical_graph(self, x, y, location):
 
         plt.figure(figsize=(13, 3))  # graph 사이즈
-        plt.ylim([-3, 20])  # 범위
-        plt.axhline(y=0, color='black', linestyle='--')    # horizon y=0을 기준점 검정색 선을 그음
+        plt.ylim([-3, 15])  # 범위
+        plt.axhline(y=0, color='black', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
         plt.xticks(fontsize=8, rotation=-5)
         colors = ['#C1F0C1']  # group 초록색
 
@@ -750,8 +810,8 @@ class PreShin_UI(QWidget):
     #  가로 graph
     def horizon_graph(self, x, y, location):
         plt.figure(figsize=(12, 20))
-        plt.xlim([-3, 20])  # 범위
-        plt.axvline(x=0, color='black', linestyle='--')    # vertical
+        plt.xlim([-3, 15])  # 범위
+        plt.axvline(x=0, color='black', linestyle='--')  # vertical
         plt.yticks(fontsize=12)
         plt.xticks(fontsize=12)
 
