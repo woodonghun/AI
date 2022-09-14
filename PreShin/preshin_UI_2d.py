@@ -26,6 +26,11 @@ def average(df):
     return avr
 
 
+def list_chunk(lines):
+    chunk = [lines[i * 3:(i + 1) * 3] for i in range((len(lines) + 3 - 1) // 3)]
+    return chunk
+
+
 class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
@@ -154,7 +159,7 @@ class PreShin_UI(QWidget):
                                                        QFileDialog.ShowDirsOnly)  # 주소 나중에 변경
         if self.pre_id != '':
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
-            if self.pre_list != []:    # 빈 폴더가 아닐때
+            if self.pre_list != []:  # 빈 폴더가 아닐때
                 for i in range(len(self.pre_list)):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
                     if ext != '.txt' or ext == '':
@@ -238,14 +243,9 @@ class PreShin_UI(QWidget):
         if lines[-1] == '':
             del lines[-1]  # 마지막 빈 칸 제거
 
-        # landmark, x, y, z 형태
-        # lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-        #                range((len(lines) + 4 - 1) // 4)]
-        # landmark, x, y, z 형태
         lines_chunk = [lines[i * 3:(i + 1) * 3] for i in
                        range((len(lines) + 3 - 1) // 3)]
 
-        # landmark 번호만 따로 저장
         lines_chunk_num = []
         for i in range(len(lines_chunk)):
             lines_chunk_num.append(lines_chunk[i][0])
@@ -275,7 +275,7 @@ class PreShin_UI(QWidget):
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
                 loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
-                                                                 QFileDialog.ShowDirsOnly)
+                                                            QFileDialog.ShowDirsOnly)
                 self.loc_xlsx = loc_xlsx + f'/{self.edt_xlsx_name.text()}_folder'
                 os.mkdir(self.loc_xlsx)
 
@@ -300,8 +300,7 @@ class PreShin_UI(QWidget):
                             if lines[-1] == '':
                                 del lines[-1]  # 마지막 빈 칸 제거
                             # 2D 3d로 바꿀려면 3을 4로 바꾸면됨
-                            lines_chunk = [lines[i * 3:(i + 1) * 3] for i in
-                                           range((len(lines) + 3 - 1) // 3)]  # 4개 단위로 리스트 나눔 (id,x,y,z) 3D
+                            lines_chunk = list_chunk(lines)
 
                             predict = open(str(self.pre_id + '/' + self.id_list[i]), "r", encoding="UTF-8")
                             lines2 = predict.read()
@@ -310,8 +309,7 @@ class PreShin_UI(QWidget):
                             if lines2[-1] == '':
                                 del lines2[-1]  # 마지막 빈 칸 제거
                             # 2D
-                            lines_chunk2 = [lines2[i * 3:(i + 1) * 3] for i in
-                                            range((len(lines2) + 3 - 1) // 3)]
+                            lines_chunk2 = list_chunk(lines2)
 
                             self.sheet_color()
                             # 3D는 z 붙이기
@@ -322,7 +320,6 @@ class PreShin_UI(QWidget):
                             df['y'] = df['y'].astype(float)
                             # df['z'] = df['z'].astype(float)
                             df['Landmark_num'] = df['Landmark_num'].astype(int)
-                            # df = df.replace(to_replace=[-99999.00,-28341.00,-23934.00,-22188.00,-22660.00], value=pd.NA)  # float 라서 -99999.00 -> 결측치로 변경
                             df = df[df >= 0]
 
                             df = df.sort_values(by='Landmark_num')  # 데이터 정렬
@@ -373,7 +370,6 @@ class PreShin_UI(QWidget):
                             patient_id = name[0].split('.')[0]
 
                             df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
-
 
                         df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
                         print(df_sheet_outlier)
@@ -429,7 +425,7 @@ class PreShin_UI(QWidget):
                         # 시트 2
 
                         self.sheet2(self.df_result, writer, aver)
-                        self.sheet2(self.df_result_outlier, writer_outlier,aver_outlier)
+                        self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
 
                         self.sheet1_setting(self.new_xlsx)
                         self.sheet1_setting(self.new_xlsx_ouliter)
@@ -515,12 +511,12 @@ class PreShin_UI(QWidget):
             ws.cell(5 + j, 2).fill = self.yellow_color
 
         # Aver value 색상
-        for row in range(5, ws.max_row):
+        for row in range(5, ws.max_row + 1):
             ws.cell(row=row, column=ws.max_column).fill = self.blue_color2
             ws.cell(row=row, column=ws.max_column).border = self.thin_border
 
         # Aver value 색상
-        for col in range(3, ws.max_column):
+        for col in range(3, ws.max_column + 1):
             ws.cell(row=ws.max_row, column=col).fill = self.blue_color2
             ws.cell(row=ws.max_row, column=col).border = self.thin_border
 
@@ -538,7 +534,7 @@ class PreShin_UI(QWidget):
                 ws.cell(row=4, column=col).fill = self.gray_color
 
         # landmark.dat 에 없는 값 색상 변환
-        for row in range(5, ws.max_row):
+        for row in range(5, ws.max_row + 1):
             if ws.cell(row=row, column=2).value == 'None':
                 ws.cell(row=row, column=2).fill = self.red_color
 
@@ -563,7 +559,7 @@ class PreShin_UI(QWidget):
 
     def sheet2_value(self):  # 시트2 landmark 2[sella]형태로 만듬
 
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
+        with open('C:/woo_project/AI/root/group_points_preShin_2D.json', 'r') as inf:  # group : { landmark 번호, ...}
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
 
         group_key = list(group.keys())
@@ -597,7 +593,7 @@ class PreShin_UI(QWidget):
 
     def sheet2_setting(self, xlsx):
 
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
+        with open('C:/woo_project/AI/root/group_points_preShin_2D.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
 
         group_key = list(group.keys())
@@ -707,7 +703,7 @@ class PreShin_UI(QWidget):
         loc = loc[0].split('/')
         print(loc)
 
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
+        with open('C:/woo_project/AI/root/group_points_preShin_2D.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
 
         key = list(group.keys())

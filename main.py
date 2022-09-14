@@ -12,12 +12,12 @@ class Main(QWidget):
 
     def initUI(self):
         btn_preshin = QPushButton(self)
-        btn_preshin.setText("preshin")
+        btn_preshin.setText("PreShin_3D")
         btn_preshin.setGeometry(20, 35, 100, 20)
         btn_preshin.clicked.connect(self.btn_preshin_clicked)
 
         btn_preshin_2d = QPushButton(self)
-        btn_preshin_2d.setText("preshin_2D")
+        btn_preshin_2d.setText("PreShin_2D")
         btn_preshin_2d.setGeometry(20, 60, 100, 20)
         btn_preshin_2d.clicked.connect(self.btn_preshin_2D_clicked)
 
