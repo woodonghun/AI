@@ -12,11 +12,12 @@ import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
 
+
 def btn_manual_clicked():
     os.startfile('C:/woo_project/AI/AI_manual.pdf')  # 메뉴얼 오픈
 
 
-class Preshin_UI(QWidget):
+class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -111,37 +112,108 @@ class Preshin_UI(QWidget):
     def btn_lbl_clicked(self):
         self.landmark()
 
-        self.lbl_id = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root',
+        self.lbl_id = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
                                                        QFileDialog.ShowDirsOnly)  # 창 title, 주소 나중에 변경
+
+        # 폴더 경로 입력
         if self.lbl_id != '':
-            self.lbl_lbl.setText(str(self.lbl_id))
-            self.lbl_list = os.listdir(str(self.lbl_id))  # 경로에 있는 파일 읽기
-            self.compare_landmark()
+            self.lbl_list = os.listdir(str(self.lbl_id))  # 폴더 경로에 있는 파일 읽기
+            if self.lbl_list != []:    # 빈 폴더가 아닐 때
+                for i in range(len(self.lbl_list)):
+                    path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
+                    if ext != '.txt' or ext == '':
+                        self.messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        break
+                if ext == '.txt':
+                    self.lbl_lbl.setText(str(self.lbl_id))
+                    self.compare_landmark()
+            else:
+                self.messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
         else:
             pass
 
     def btn_pre_clicked(self):
-        self.pre_id = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root',
+        self.pre_id = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
                                                        QFileDialog.ShowDirsOnly)  # 주소 나중에 변경
-
         if self.pre_id != '':
-            self.lbl_pre.setText(self.pre_id)
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
+            if self.pre_list != []:
+                for i in range(len(self.pre_list)):
+                    path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
+                    if ext != '.txt' or ext == '':
+                        self.messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        break
+                if ext == '.txt':
+                    self.lbl_pre.setText(str(self.pre_id))
+            else:
+                self.messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
         else:
             pass
+
+        # landmark.dat 구조 변경 후 number - key, name - value 로 지정
+
+    def landmark(self):
+
+        txt = open('C:/woo_project/AI/root/landmark.dat', 'r')
+        landmark = txt.read()
+        txt.close()
+
+        # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
+        # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
+        landmark = landmark.replace(',', ' ')
+        landmark = landmark.replace('\t', ',')
+        landmark = landmark.replace('\n', ',')
+        landmark = landmark.replace('   ', ',')
+        landmark = landmark.split(',')
+
+        # 총 landmark list 안에 12개의 list 생성
+        landmark_chunk = [landmark[i:i + 12] for i in
+                          range(0, len(landmark), 12)]
+
+        # id : key , number : value 형태 dict 로 만듬
+        landmark_dict = {}
+        for i in range(len(landmark_chunk) - 1):
+            landmark_dict[landmark_chunk[i][2]] = landmark_chunk[i][1]
+
+        # key, value 분리
+        self.landmark_key = list(landmark_dict.keys())
+        self.landmark_value = list(landmark_dict.values())
+
+        # 2[Sella] 형태 만듬
+        self.landmark_name_value = []
+        for i in range(len(self.landmark_key)):
+            self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')
 
     # id 정렬
     def set_pre_lbl(self):
         set_lbl = set(self.lbl_list)
         set_pre = set(self.pre_list)
 
-        id = list(set_lbl & set_pre)  # id 두개다 있는 것만 추려냄
-        id = [b.split('.')[0] for b in id]
-        id.sort()  # id 정렬 set 함수는 정렬 안되서 나옴
-        id.reverse()
-        self.id_list = [(j + '.txt') for j in id]
+        id_list = list(set_lbl & set_pre)  # id 두개다 있는 것만 추려냄
+        id_list = [b.split('.')[0] for b in id_list]
+        id_list.sort()  # id 정렬 set 함수는 정렬 안되서 나옴
+        id_list.reverse()
+        self.id_list = [(j + '.txt') for j in id_list]
 
+    # label, predict 폴더 비교 없는 파일 출력
+    def error_id(self, loc, name):
+        set_lbl = set(self.lbl_list)
+        set_pre = set(self.pre_list)
+        only_lbl = list(set_lbl - set_pre)  # label 만 있는 파일
+        only_pre = list(set_pre - set_lbl)  # predict 만 있는 파일
+
+        if only_lbl == [] and only_lbl == []:
+            pass
+        else:
+            f = open(f"{loc}/{name}_error.txt", 'w')
+            f.write(f'label 폴더에 {only_pre} : 파일이 존재하지 않습니다.\n')
+            f.write(f'Predict 폴더에 {only_lbl} : 파일이 존재하지 않습니다.')
+            f.close()
+            self.messagebox("label 또는 predict 에 존재하지 않는 id가 있습니다.\n error.txt 를 확인하세요")
+
+    # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
     def compare_landmark(self):
+        # label 폴더의 제일 처음 환자 id를 읽음
         label = open(str(self.lbl_id + '/' + self.lbl_list[0]), "r", encoding="UTF-8")
         lines = label.read()
         lines = lines.replace("\n", ",")
@@ -149,12 +221,14 @@ class Preshin_UI(QWidget):
         if lines[-1] == '':
             del lines[-1]  # 마지막 빈 칸 제거
 
-        self.lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
-                            range((len(lines) + 4 - 1) // 4)]
+        # landmark, x, y, z 형태
+        lines_chunk = [lines[i * 4:(i + 1) * 4] for i in
+                       range((len(lines) + 4 - 1) // 4)]
 
+        # landmark 번호만 따로 저장
         lines_chunk_num = []
-        for i in range(len(self.lines_chunk)):
-            lines_chunk_num.append(self.lines_chunk[i][0])  # 빈 리스트에 label에서 가져온 landmark번호만 따로 저장
+        for i in range(len(lines_chunk)):
+            lines_chunk_num.append(lines_chunk[i][0])
 
         set_lines_chunk_num = set(lines_chunk_num)
         set_landmark_value = set(self.landmark_value)
@@ -164,44 +238,26 @@ class Preshin_UI(QWidget):
         self.landmark_name = []  # 빈 리스트 생성
 
         # landmark 저장
-        for i in range(len(self.lines_chunk)):
+        for i in range(len(lines_chunk)):
             for j in range(len(self.landmark_value)):
-                if self.lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
+                if lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
                     self.landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
                     continue
                 if j > len(self.landmark_value) - 2:
                     for k in range(len(empty_list)):
-                        if empty_list[k] == self.lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
+                        if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('None')
-
-    def error_id(self, loc, name):
-        set_lbl = set(self.lbl_list)
-        set_pre = set(self.pre_list)
-        only_lbl = list(set_lbl - set_pre)
-        only_pre = list(set_pre - set_lbl)
-
-        if only_lbl == [] and only_lbl == []:
-            pass
-        else:
-            f = open(f"{loc}/{name}_error.txt", 'w')
-            f.write(f'label 폴더에 {only_lbl} : id가 존재하지 않습니다.\n')
-            f.write(f'Predict 폴더에 {only_pre} : id가 존재하지 않습니다.')
-            f.close()
-            self.messagebox("label 또는 predict에 존재하지 않는 id가 있습니다. error.txt를 확인하세요")
 
     def btn_export_clicked(self):
         # lbl, pre 둘다 선택
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
-            # self.file_name = QFileDialog.getSaveFileName(self, self.tr("Save Data file"), "C:/woo_project/AI/root",
-            #                                             self.tr("Data Files(*.xlsx)"))  # 창 title, 위치, 확장자
-            # 저장 파일 선택 했을 때
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
-                self.loc_xlsx = QFileDialog.getExistingDirectory(self, self.tr("Open file"), 'C:/woo_project/AI/root',
+                self.loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
                                                                  QFileDialog.ShowDirsOnly)
 
                 if self.loc_xlsx != '':  # 폴더 선택 했을때
-                    file = os.listdir(self.loc_xlsx)
+                    file = os.listdir(self.loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
                     if self.edt_xlsx_name.text() + '.xlsx' not in file:  # 동일한 파일명이 없을때
                         df_sheet = pd.DataFrame()
                         self.set_pre_lbl()  # id 정렬
@@ -209,9 +265,9 @@ class Preshin_UI(QWidget):
                         self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
                         wb.save(self.new_xlsx)
 
-                        self.sheet2_value()
+                        self.sheet2_value()  # sheet2 landmark name 설정
 
-                        for i in range(len(self.id_list)):
+                        for i in range(len(self.id_list)):  # 환자 수 만큼 만들고 df합침
                             name = self.id_list[i].split('/')
                             label = open(str(self.lbl_id + '/' + self.id_list[i]), "r", encoding="UTF-8")  # 파일 하나씩하기 위해선?
                             lines = label.read()
@@ -232,7 +288,7 @@ class Preshin_UI(QWidget):
                             lines_chunk2 = [lines2[i * 4:(i + 1) * 4] for i in
                                             range((len(lines2) + 4 - 1) // 4)]
 
-                            self.sheet_style()
+                            self.sheet_color()
                             writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
                             df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
 
@@ -348,33 +404,8 @@ class Preshin_UI(QWidget):
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             self.messagebox("label 또는 predict 경로를 확인 하세요.")
 
-    # landmark.dat 구조 변경 후 number - key, name - value 로 지정
-    def landmark(self):
-
-        txt = open('C:/woo_project/AI/root/landmark.dat', 'r')
-        landmark = txt.read()
-        txt.close()
-        landmark = landmark.replace(',', ' ')
-        landmark = landmark.replace('\t', ',')
-        landmark = landmark.replace('\n', ',')
-        landmark = landmark.replace('   ', ',')
-        landmark = landmark.split(',')
-
-        landmark_chunk = [landmark[i:i + 12] for i in
-                          range(0, len(landmark), 12)]
-
-        landmark_dict = {}
-        for i in range(len(landmark_chunk) - 1):
-            landmark_dict[landmark_chunk[i][2]] = landmark_chunk[i][1]  # id : key , number : value
-
-        self.landmark_name_value = []
-        self.landmark_key = list(landmark_dict.keys())
-        self.landmark_value = list(landmark_dict.values())
-        for i in range(len(self.landmark_key)):
-            self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')
-
     # 시트 색상, 테두리 스타일
-    def sheet_style(self):
+    def sheet_color(self):
         self.yellow_color = PatternFill(start_color='ffffb3', end_color='ffffb3', fill_type='solid')
         self.red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
         self.green_color = PatternFill(start_color='c1f0c1', end_color='c1f0c1', fill_type='solid')
@@ -394,36 +425,40 @@ class Preshin_UI(QWidget):
         wb = openpyxl.load_workbook(filename=self.new_xlsx)
         ws = wb['Sheet1']
 
-        # table에 default값 출력
+        # table 에 작성된 값 삽입
         ws.cell(row=1, column=3).value = f'Error Safe Zone : {self.edt_error.text()}mm'
         ws.cell(row=1, column=6).value = f'Hyperparameter : Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
-        ws.column_dimensions['A'].width = 15
+        ws.column_dimensions['A'].width = 15  # 셀 너비 설정
         ws.column_dimensions['B'].width = 20
 
-        # comment에 default값 출력
+        # comment 에 작성된 값 삽입
         ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
         ws.cell(row=3, column=3).value = 'Patient_ID'
         ws.cell(3, 3).fill = self.blue_color
         ws.cell(4, 1).fill = self.blue_color
         ws.cell(4, 2).fill = self.blue_color
 
+        # landmark_num, landmark_name 색상
         for j in range(ws.max_row - 5):
             ws.cell(5 + j, 1).border = self.thin_border
             ws.cell(5 + j, 1).fill = self.green_color
             ws.cell(5 + j, 2).border = self.thin_border
             ws.cell(5 + j, 2).fill = self.yellow_color
 
+        # Aver value 색상
         for row in range(5, ws.max_row):
             ws.cell(row=row, column=ws.max_column).fill = self.blue_color2
             ws.cell(row=row, column=ws.max_column).border = self.thin_border
 
+        # Aver value 색상
         for col in range(3, ws.max_column):
             ws.cell(row=ws.max_row, column=col).fill = self.blue_color2
             ws.cell(row=ws.max_row, column=col).border = self.thin_border
 
+        # 수치에 따른 색상, 결측치 값,색상 변환
         for col in range(3, ws.max_column + 1):
             for row in range(5, ws.max_row + 1):
                 data = float(ws.cell(row=row, column=col).value)
@@ -436,15 +471,18 @@ class Preshin_UI(QWidget):
                     ws.cell(row=row, column=col).border = self.thin_border
                 ws.cell(row=4, column=col).fill = self.gray_color
 
+        # landmark.dat 에 없는 값 색상 변환
         for row in range(5, ws.max_row):
             if ws.cell(row=row, column=2).value == 'None':
                 ws.cell(row=row, column=2).fill = self.red_color
 
+        # Aver 색상 변경
         ws.cell(4, ws.max_column).fill = self.blue_color
         ws.cell(4, ws.max_column).border = self.thin_border
         ws.cell(ws.max_row, 2).fill = self.blue_color
         ws.cell(ws.max_row, 2).border = self.thin_border
 
+        # Patient_ID 위에 있는 셀 병합
         ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
         wb.save(filename=self.new_xlsx)
 
@@ -457,10 +495,10 @@ class Preshin_UI(QWidget):
         signBox.setStandardButtons(QMessageBox.Ok)
         signBox.exec_()
 
-    def sheet2_value(self):
+    def sheet2_value(self):  # 시트2 landmark 2[sella]형태로 만듬
 
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
-            group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
+        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:    # group : { landmark 번호, ...}
+            group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
 
         group_key = list(group.keys())
         group_value = list(group.values())
@@ -474,6 +512,7 @@ class Preshin_UI(QWidget):
                     if str(group_value[i][j]) == name[0]:  # name[0] = 랜드마크 번호
                         group_value[i][j] = self.landmark_name_value[k]  # value 즉 num 가 2[Sella] 형태가 됨
 
+        # group 에 정의 되지 않은 landmark [None] 붙이기
         for i in range(len(group_value)):
             for j in range(len(group_value[i])):
                 if ']' in str(group_value[i][j]):
@@ -481,6 +520,7 @@ class Preshin_UI(QWidget):
                 else:
                     group_value[i][j] = str(group_value[i][j]) + '[None]'
 
+        # group_name, landmark_name 합치기
         for i in range(len(group_key)):
             sheet2_group.append(group_key[i])
             for j in range(len(group_value[i])):
@@ -508,16 +548,10 @@ class Preshin_UI(QWidget):
                                          f', aug = {self.table.item(3, 1).text()} '
 
         ws.cell(row=2, column=3).value = f'comment : {self.edt.toPlainText()}'
-        ws['F4'].fill = self.blue_color
-        ws['F4'] = 'Total_aver'
-        ws['H4'].fill = self.green_color
-        ws['H4'] = 'Group_Name'
-        ws['J4'].fill = self.yellow_color
-        ws['J4'] = 'Landmark'
-        ws['L4'].fill = self.red_color
-        ws['L4'] = 'Error'
 
-        for row in range(5, ws.max_row+1):
+
+
+        for row in range(5, ws.max_row + 1):
             data = ws.cell(row=row, column=2).value
             if data == -99999:
                 ws.cell(row=row, column=2).value = ' '
@@ -528,7 +562,6 @@ class Preshin_UI(QWidget):
                 ws.cell(row=row, column=2).border = self.thin_border
             ws.cell(row=row, column=1).fill = self.yellow_color
             ws.cell(row=row, column=1).border = self.thin_border
-
 
         ws.cell(row=4, column=1).fill = self.blue_color
         ws.cell(row=4, column=1).border = self.thin_border
@@ -549,7 +582,7 @@ class Preshin_UI(QWidget):
             for j in range(len(group_value)):  # Group 평균
                 num = 0
                 result = 0
-                for row in range(b, b + len(group_value[i])):    # None, ' ' 을 제외한 합
+                for row in range(b, b + len(group_value[i])):  # None, ' ' 을 제외한 합
                     data = ws.cell(row=row, column=2).value
                     if data == 'None' or data == ' ':
                         pass
@@ -581,15 +614,31 @@ class Preshin_UI(QWidget):
         ws.column_dimensions['A'].width = 23
         ws.column_dimensions['B'].width = 15
 
-        wb.save(filename=self.new_xlsx)
-        df = pd.read_excel(self.new_xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1])    # 그래프가 없는 시트2 불러옴 (시트에서 평균값을 만들어서 다시 불러와
-        df = df.replace(to_replace=' ', value=-0.0001)  # 결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
-        df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
-        df = df.dropna(axis=0)    # 줄 띄워서 생긴 결측치 제거
-        df = round(df, 4)  # 소수 자리수
-        self.matploblib(df)
+        # 색상 정보
+        ws['F3'].fill = self.orange_color
+        ws['F3'] = 'None'
+        ws['G3'] = 'id에 landmark가 없음'
+        ws['J3'].fill = self.gray_color2
+        ws['k3'] = '결측치'
+        ws['F5'].fill = self.blue_color
+        ws['F5'] = 'Total_aver'
+        ws['H5'].fill = self.green_color
+        ws['H5'] = 'Group_Name'
+        ws['J5'].fill = self.yellow_color
+        ws['J5'] = 'Landmark'
+        ws['L5'].fill = self.red_color
+        ws['L5'] = 'Error'
 
-    def matploblib(self, df):  # 그래프 생성
+        wb.save(filename=self.new_xlsx)
+        # 그래프가 없는 시트2 불러옴 시트에서 평균값을 만들어서 다시 불러와야함
+        df = pd.read_excel(self.new_xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1])
+        df = df.replace(to_replace=' ', value=-0.0001)  # ' '결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
+        df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
+        df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
+        df = round(df, 4)  # 소수 자리수
+        self.graph(df)
+
+    def graph(self, df):  # 그래프 생성
 
         with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신 dict 로 변환
@@ -598,72 +647,56 @@ class Preshin_UI(QWidget):
         value = list(group.values())
         group_list = []
 
-
-        for i in range(len(key)):  # 그룹별 value 개수
+        # 그룹별 landmark 개수 리스트
+        for i in range(len(key)):
             group_list.append(1 + len(value[i]))
-        graph = df
+
+        graph = df    # 시트2 데이터 프레임
         graph_dict = graph.to_dict('list')
         graph_value = list(graph_dict.values())
 
         start_row = 0
-        image_insert = 7    # 이미지 삽입 시작 셀
+        image_insert = 7  # 이미지 삽입 시작 셀
 
+        # 폴더 생성
         location = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_image'
         os.mkdir(location)
 
+        # 이미지를 엑셀에 넣기 위함
         wb = openpyxl.load_workbook(filename=self.new_xlsx)
         ws = wb['Sheet2']
 
+        # total_aver 이름, 측정값 추가
         group_total_name = []
         group_total_value = []
         group_total_name.append(graph_value[0][0])
         group_total_value.append(graph_value[1][0])
-        # total_aver 이름, 측정값 추가
 
+        # 그룹 개수 만큼 그래프 생성
         for j in range(len(group_list)):
             group_total_name.append(graph_value[0][1 + start_row])
             group_total_value.append(graph_value[1][1 + start_row])
+            # group_value[0][0] - total_aver 이라 [1]부터 해야됨
+            # Total_aver, group 으로 묶음
 
             group_name = graph_value[0][1 + start_row: 1 + group_list[j] + start_row]
             group_value = graph_value[1][1 + start_row: 1 + group_list[j] + start_row]
+            # group, group 의 landmark 로 묶음
 
-            start_row += group_list[j]
-            self.bar_style(group_name, group_value, location)
+            start_row += group_list[j]  # group 만 묶기 위해 group landmark 개수를 더해서 group 의 시작 위치로 감
 
-            img = Image(location + f'/{group_name[0]}.png')    # 파일저장
+            self.vertical_graph(group_name, group_value, location)  # group, landmark 그래프 제작
+
+            img = Image(location + f'/{group_name[0]}.png')  # 파일 저장
             img.width = 800  # 픽셀 단위 사이즈 변경
             img.height = 225
             ws.add_image(img, f'D{image_insert}')
             image_insert += group_list[j] + 2  # 2칸씩 띄워서 삽입
 
         # total 이랑 group graph
-        plt.figure(figsize=(12, 20))
-        plt.xlim([-3, 15])  # 범위
-        plt.axvline(x=0, color='black', linestyle='--')
-        plt.yticks(fontsize=12)
-        plt.xticks(fontsize=12)
+        self.horizon_graph(group_total_value, group_total_name, location)
 
-        colors = ['#B3D9FF']    # total aver 파랑
-        for j in range(len(group_total_name)-1):
-            if group_total_value[j+1] >float(self.edt_error.text()):
-                colors.append('#FFCCCC')    # error 빨강
-            else:
-                colors.append('#C1F0C1')    # group 초록
-        sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=group_total_value, y=group_total_name, edgecolor = 'black')
-        bar.set(title=group_total_name[0])
-        for p in bar.patches:  # 바에 내용 추가
-            width = p.get_width()
-            if width == -0.0001:
-                bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='r')
-            elif width == -0.0002:
-                bar.text(-2, p.get_y() + p.get_height() / 2, 'None', ha='center', size=10, color='orange')
-            else:
-                bar.text(-2, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
-
-        plt.savefig(location + f'/{group_total_name[0]}.png')    # save랑 show의 위치가 바뀌면 save는 실행되지 않는다, 파일저장
-        plt.close()
-        img = Image(location + f'/{group_total_name[0]}.png')    # 파일 불러옴
+        img = Image(location + f'/{group_total_name[0]}.png')  # 파일 불러옴
         img.width = 650  # 픽셀 단위 사이즈 변경
         img.height = 1000
         ws.add_image(img, 'O2')
@@ -672,31 +705,68 @@ class Preshin_UI(QWidget):
         # 최대치 ----- 20 ~ 30
         # 소수점 3자리
 
-    def bar_style(self, x, y, location):
+    # 세로 graph 제작
+    def vertical_graph(self, x, y, location):
 
-        plt.figure(figsize=(13, 3))
+        plt.figure(figsize=(13, 3))  # graph 사이즈
         plt.ylim([-3, 15])  # 범위
-        plt.axhline(y=0, color='black', linestyle='--')
+        plt.axhline(y=0, color='black', linestyle='--')    # horizon y=0을 기준점 검정색 선을 그음
         plt.xticks(fontsize=8, rotation=-5)
-        colors = ['#C1F0C1']    # group 초록색
-        for j in range(len(x)-1):
-            if float(y[j+1]) >= float(self.edt_error.text()):
-                colors.append('#FFCCCC')    # error 빨강
-            else:
-                colors.append('#FFFFB3')    # 기본 노랑
-        sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=x, y=y,edgecolor='black')
-        bar.set(title=x[0])
-        for p in bar.patches:  # 바에 내용 추가
-            height = p.get_height()
-            if height == -0.0001:    # 결측치 일때
-                bar.text(p.get_x() + p.get_width() / 2., -2, 'N/A', ha='center', size=7, color='r')
-            elif height == -0.0002:    # group 에 값이 없을 때
-                bar.text(p.get_x() + p.get_width() / 2., -2, 'None', ha='center', size=7, color='orange')
-            else:
-                bar.text(p.get_x() + p.get_width() / 2., -2, height, ha='center', size=7)
+        colors = ['#C1F0C1']  # group 초록색
 
-        plt.savefig(location + f'/{x[0]}.png')  # save랑 show의 위치가 바뀌면 save는 실행되지 않는다
+        # 일정 수치 이상 색 변환
+        for j in range(len(x) - 1):
+            if float(y[j + 1]) >= float(self.edt_error.text()):
+                colors.append('#FFCCCC')  # error 빨강
+            else:
+                colors.append('#FFFFB3')  # 기본 노랑
+
+        # colors 리스트 삽입
+        sns.set_palette(sns.color_palette(colors))
+        bar = sns.barplot(x=x, y=y, edgecolor='black')  # edge color 테두리
+        bar.set(title=x[0])
+
+        # 바에 내용 추가
+        for p in bar.patches:
+            height = p.get_height()
+            if height == -0.0001:  # 결측치 일때
+                bar.text(p.get_x() + p.get_width() / 2., -2, 'N/A', ha='center', size=10, color='r')
+            elif height == -0.0002:  # group 에 값이 없을 때
+                bar.text(p.get_x() + p.get_width() / 2., -2, 'None', ha='center', size=10, color='orange')
+            else:
+                bar.text(p.get_x() + p.get_width() / 2., -2, height, ha='center', size=10)
+
+        plt.savefig(location + f'/{x[0]}.png')  # save 랑 show 의 위치가 바뀌면 save 는 실행되지 않는다
+        # plt.show() 바로 볼수 있음
+        plt.close()
+
+    #  가로 graph
+    def horizon_graph(self, x, y, location):
+        plt.figure(figsize=(12, 20))
+        plt.xlim([-3, 15])  # 범위
+        plt.axvline(x=0, color='black', linestyle='--')    # vertical
+        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=12)
+
+        colors = ['#B3D9FF']  # total aver 파랑
+        for j in range(len(y) - 1):
+            if x[j + 1] > float(self.edt_error.text()):
+                colors.append('#FFCCCC')  # error 빨강
+            else:
+                colors.append('#C1F0C1')  # group 초록
+        sns.set_palette(sns.color_palette(colors))
+        bar = sns.barplot(x=x, y=y, edgecolor='black')
+        bar.set(title=y[0])
+        for p in bar.patches:  # 바에 내용 추가
+            width = p.get_width()
+            if width == -0.0001:
+                bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+            elif width == -0.0002:
+                bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+            else:
+                bar.text(-2, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
+
+        plt.savefig(location + f'/{y[0]}.png')  # save랑 show의 위치가 바뀌면 save는 실행되지 않는다, 파일저장
         plt.close()
 
     def dialog_close(self):
