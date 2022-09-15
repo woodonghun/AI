@@ -67,7 +67,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
-                loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
+                loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(),
                                                             QFileDialog.ShowDirsOnly)
 
                 if loc_xlsx != '':  # 폴더 선택 했을때
@@ -206,6 +206,6 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
             messagebox("label 또는 predict 경로를 확인 하세요.")
 
     def open_json(self):
-        with open('C:/woo_project/AI/root/group_points_preShin_2D.json', 'r') as inf:  # group : { landmark 번호, ...}
+        with open(f'{os.getcwd()}/root/group_points_preShin_2D.json', 'r') as inf:  # group : { landmark 번호, ...}
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
         return group

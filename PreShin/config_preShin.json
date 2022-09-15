@@ -1,0 +1,16 @@
+{
+    "train_epoch": 1000,
+    "lr": 2e-4,
+    "batch_size": 4,
+    "dataset_path": "E:/temp/project/Preshin2/data/8test/temp_train",
+    "resize_cache_path": "E:/temp/project/Preshin2/data/8test/temp_train/",
+    "max_dimension": [800, 800, 1043],
+    "crop_dimension": 48,
+    "crop_rand_range": 20,
+    "zoom_portion": 22,
+    "scale_factor": 5,
+    "seed": [[0]],
+    "cuda_id": 0,
+    "log_folder": "./log",
+    "log_level": "debug"
+}

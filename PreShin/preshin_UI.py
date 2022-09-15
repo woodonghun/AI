@@ -13,9 +13,12 @@ from openpyxl.styles import PatternFill, Font
 import seaborn as sns
 
 
+
+
 def btn_manual_clicked():
     print(os.getcwd())
     os.startfile(f'{os.getcwd()}/root/AI_manual.pdf')  # 메뉴얼 오픈
+    # 모든 경로는 exe 파일 만들때 수정 해야 한다.
 
 
 # 전체 df의 전체 평균
@@ -52,6 +55,7 @@ class PreShin_UI(QWidget):
         self.dialog_close()
 
     def initUI(self):
+        logger.info("UI 입장")
         batch = '4'
         rate = '2e-4'
         optimizer = 'adam'
@@ -160,9 +164,10 @@ class PreShin_UI(QWidget):
 
     def btn_lbl_clicked(self):
         # landmark.dat 먼저 읽고 변환
+        # export 에서 하면 안되서 미리 넣음
         self.landmark()
 
-        self.lbl_id = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
+        self.lbl_id = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(),
                                                        QFileDialog.ShowDirsOnly)  # 창 title, 주소 나중에 변경
 
         # 폴더 경로 입력
@@ -173,9 +178,12 @@ class PreShin_UI(QWidget):
                     path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
                     if ext != '.txt' or ext == '':
                         messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        self.lbl_lbl.setText('')
                         break
-                if ext == '.txt':
                     self.lbl_lbl.setText(str(self.lbl_id))
+
+                    # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
+                    # export 에서 하면 안되서 미리 넣음
                     self.compare_landmark()
             else:
                 messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
@@ -183,7 +191,7 @@ class PreShin_UI(QWidget):
             self.lbl_lbl.setText('')
 
     def btn_pre_clicked(self):
-        self.pre_id = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
+        self.pre_id = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(),
                                                        QFileDialog.ShowDirsOnly)  # 주소 나중에 변경
         if self.pre_id != '':
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
@@ -192,8 +200,8 @@ class PreShin_UI(QWidget):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
                     if ext != '.txt' or ext == '':
                         messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        self.lbl_pre.setText('')
                         break
-                if ext == '.txt':
                     self.lbl_pre.setText(str(self.pre_id))
             else:
                 messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
@@ -203,7 +211,7 @@ class PreShin_UI(QWidget):
     # landmark.dat 구조 변경 후 number - key, name - value 로 지정
     def landmark(self):
 
-        txt = open('C:/woo_project/AI/root/landmark.dat', 'r')
+        txt = open(f'{os.getcwd()}/root/landmark.dat', 'r')
         landmark = txt.read()
         txt.close()
 
@@ -314,7 +322,7 @@ class PreShin_UI(QWidget):
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
-                loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", 'C:/woo_project/AI/root',
+                loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(),
                                                             QFileDialog.ShowDirsOnly)
                 if loc_xlsx != '':  # 폴더 선택 했을때
                     file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
@@ -575,7 +583,7 @@ class PreShin_UI(QWidget):
         wb.save(filename=xlsx)
 
     def open_json(self):
-        with open('C:/woo_project/AI/root/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
+        with open(f'{os.getcwd()}/root/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
         return group
 
