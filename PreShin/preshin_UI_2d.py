@@ -6,20 +6,12 @@ import pandas as pd
 from PySide2.QtWidgets import QFileDialog
 
 import PreShin.preshin_UI
+from PreShin.preshin_UI import average, messagebox
 
 
 def list_chunk_2d(lines):
     chunk_2d = [lines[i * 3:(i + 1) * 3] for i in range((len(lines) + 3 - 1) // 3)]
     return chunk_2d
-
-
-def average(df):
-    data_sum = df.sum()  # 각각 id의 sum
-    id_sum = data_sum.sum()  # data sum 의 sum
-    data_count = df.count()  # df_sheet 의 각각 id의 value 개수
-    data_count = data_count.sum()  # id의 value 개수 합
-    avr = id_sum / data_count  # 전체 평균
-    return avr
 
 
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
@@ -58,6 +50,16 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                     for k in range(len(empty_list)):
                         if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('None')
+
+    def id_dataframe(self, lines_chunk):
+        df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
+        df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
+        df['y'] = df['y'].astype(float)
+        df['Landmark_num'] = df['Landmark_num'].astype(int)
+        df = df[df >= 0]
+
+        df = df.sort_values(by='Landmark_num')  # 데이터 정렬
+        return df
 
     def btn_export_clicked(self):
         # lbl, pre 둘다 선택
@@ -102,31 +104,12 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                                 del lines2[-1]  # 마지막 빈 칸 제거
                             lines_chunk2 = list_chunk_2d(lines2)
 
-                            self.sheet_color()
-                            # 3D는 z 붙이기
-
-                            df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
-                            df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
-                            df['y'] = df['y'].astype(float)
-                            df['Landmark_num'] = df['Landmark_num'].astype(int)
-                            df = df[df >= 0]
-
-                            df = df.sort_values(by='Landmark_num')  # 데이터 정렬
-
-                            df2 = pd.DataFrame(lines_chunk2,
-                                               columns=['Landmark_num', 'x', 'y'])  # predict 데이터 프래임 2D
-
-                            df2['x'] = df2['x'].astype(float)
-                            df2['y'] = df2['y'].astype(float)
-                            df2['Landmark_num'] = df2['Landmark_num'].astype(int)
-                            df2 = df2[df2 >= 0]
-
-                            df2 = df2.sort_values(by='Landmark_num')
+                            df = self.id_dataframe(lines_chunk)
+                            df2 = self.id_dataframe(lines_chunk2)
 
                             result = df.sub(df2)  # 결과값 데이터 프레임 df-df2
                             result['Landmark_num'] = df['Landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
-                            df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y',
-                                                                              ])  # 랜드마크 번호, 이름에 대한 dataframe 생성 2D
+                            df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y'])  # 랜드마크 번호, 이름에 대한 dataframe 생성 2D
                             df_landmark['Landmark_num'] = df_landmark['Landmark_num'].astype(int)
                             df_landmark.insert(1, 'Landmark_name', self.landmark_name)
                             df_landmark.drop('x', axis=1, inplace=True)
@@ -148,16 +131,14 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                             patient_id = name[0].split('.')[0]
 
                             df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
-
+                        # outlier 의 수치 이하의 값만 출력 후 평균값 만들어서 landmark 와 합침
                         df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
-                        print(df_sheet_outlier)
-
-                        aver = average(df_sheet)
                         aver_outlier = average(df_sheet_outlier)
-
                         df_sheet_outlier['Aver'] = df_sheet_outlier.mean(axis=1)
                         df_result_outlier = pd.concat([df_landmark, df_sheet_outlier], axis=1)
 
+                        # 평균값 만들어서 landmark 와 합침
+                        aver = average(df_sheet)
                         df_sheet['Aver'] = df_sheet.mean(axis=1)  # 마지막 열에 평균 추가
                         df_result = pd.concat([df_landmark, df_sheet], axis=1)  # 랜드마크, value 데이터 프레임 합치기
 
@@ -178,14 +159,16 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         df_result2_outlier = df_result_outlier.iloc[:, 2: len(df_result_outlier.columns)]
                         df_result2_outlier.drop(df_result_outlier.tail(1).index)
                         df_result2_outlier.loc[df.shape[0]] = df_result2_outlier.mean(axis=0)
-                        # 기본
 
+                        # 기본
                         self.df_result = pd.concat([df_result1, df_result2], axis=1)
                         self.df_result = self.df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
                         self.df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
                         self.df_result.reset_index(inplace=True, drop='index')
 
-                        # 기본 세팅
+                        self.sheet_color()
+
+                        # 엑셀
                         writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
                                                 index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
@@ -195,7 +178,8 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.df_result_outlier = self.df_result_outlier.fillna(-99999)
                         self.df_result_outlier.iat[-1, -1] = aver_outlier
                         self.df_result_outlier.reset_index(inplace=True, drop='index')
-                        print(df_result2_outlier)
+
+                        # outlier 엑셀
                         writer_outlier = pd.ExcelWriter(self.new_xlsx_ouliter, engine='openpyxl')
                         self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
                                                         index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
@@ -212,14 +196,14 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         ############
                         self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
                     else:
-                        self.messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
+                        messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
                 else:
                     pass
             else:
-                self.messagebox("파일명을 입력하세요")
+                messagebox("파일명을 입력하세요")
         # label, predict 선택 되지 않았을 때
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
-            self.messagebox("label 또는 predict 경로를 확인 하세요.")
+            messagebox("label 또는 predict 경로를 확인 하세요.")
 
     def open_json(self):
         with open('C:/woo_project/AI/root/group_points_preShin_2D.json', 'r') as inf:  # group : { landmark 번호, ...}
