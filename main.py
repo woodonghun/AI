@@ -29,7 +29,7 @@ class Main(QWidget):
         PreShin.preshin_UI.PreShin_UI()
 
     def btn_preshin_2D_clicked(self):
-        PreShin.preshin_UI_2d.PreShin_UI()
+        PreShin.preshin_UI_2d.PreShin_UI_2d()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
