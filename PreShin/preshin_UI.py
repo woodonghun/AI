@@ -11,14 +11,11 @@ from PySide2.QtWidgets import QWidget, QPushButton, QFileDialog, QDialog, QLabel
 import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
-
-
+from PreShin.loggers import logger
 
 
 def btn_manual_clicked():
-    print(os.getcwd())
     os.startfile(f'{os.getcwd()}/root/AI_manual.pdf')  # 메뉴얼 오픈
-    # 모든 경로는 exe 파일 만들때 수정 해야 한다.
 
 
 # 전체 df의 전체 평균
@@ -29,11 +26,6 @@ def average(df):
     data_count = data_count.sum()  # id의 value 개수 합
     avr = id_sum / data_count  # 전체 평균
     return avr
-
-
-def list_chunk_3d(lines):
-    chunk_3d = [lines[i * 4:(i + 1) * 4] for i in range((len(lines) + 4 - 1) // 4)]
-    return chunk_3d
 
 
 def messagebox(i: str):
@@ -52,10 +44,9 @@ class PreShin_UI(QWidget):
 
         self.dialog = QDialog()
         self.initUI()
-        self.dialog_close()
 
     def initUI(self):
-        logger.info("UI 입장")
+        logger.info('PreShin_UI open')
         batch = '4'
         rate = '2e-4'
         optimizer = 'adam'
@@ -157,13 +148,16 @@ class PreShin_UI(QWidget):
         self.dialog.setWindowTitle('AI')
         self.dialog.setGeometry(500, 300, 370, 420)
         self.dialog.exec()
+        logger.info('PreShin_UI close')
 
+    # 체크박스 변환
     def cb_unit_change(self, text):
         self.lbl_outlier_unit.setText(text)
         self.lbl_mm.setText(text)
 
     def btn_lbl_clicked(self):
-        # landmark.dat 먼저 읽고 변환
+        logger.info('label_btn in')
+        # landmark.dat, json 먼저 읽고 변환
         # export 에서 하면 안되서 미리 넣음
         self.landmark()
 
@@ -173,60 +167,85 @@ class PreShin_UI(QWidget):
         # 폴더 경로 입력
         if self.lbl_id != '':
             self.lbl_list = os.listdir(str(self.lbl_id))  # 폴더 경로에 있는 파일 읽기
+
             if self.lbl_list != []:  # 빈 폴더가 아닐 때
+
                 for i in range(len(self.lbl_list)):
                     path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
+
                     if ext != '.txt' or ext == '':
                         messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        logger.error('label file format Error')
                         self.lbl_lbl.setText('')
                         break
-                    self.lbl_lbl.setText(str(self.lbl_id))
 
+                    self.lbl_lbl.setText(str(self.lbl_id))
                     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
                     # export 에서 하면 안되서 미리 넣음
                     self.compare_landmark()
             else:
                 messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                logger.error('label file format Error')
         else:
             self.lbl_lbl.setText('')
+        logger.info('label_btn out')
 
     def btn_pre_clicked(self):
+        logger.info('predict_btn in')
         self.pre_id = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(),
                                                        QFileDialog.ShowDirsOnly)  # 주소 나중에 변경
         if self.pre_id != '':
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
+
             if self.pre_list != []:  # 빈 폴더가 아닐때
+
                 for i in range(len(self.pre_list)):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
+
                     if ext != '.txt' or ext == '':
                         messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                        logger.error('label file format Error')
                         self.lbl_pre.setText('')
                         break
+
                     self.lbl_pre.setText(str(self.pre_id))
             else:
                 messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                logger.error('label file format Error')
+
         else:
             self.lbl_pre.setText('')  # 껏을때 빈칸
+        logger.info('predict_btn out')
 
     # landmark.dat 구조 변경 후 number - key, name - value 로 지정
+    # data 오류 확인
     def landmark(self):
 
-        txt = open(f'{os.getcwd()}/root/landmark.dat', 'r')
-        landmark = txt.read()
+        txt = open(f'{os.getcwd()}/landmark.dat', 'r')
+
+        landmark = txt.readlines()
+        landmark_chunk = []
+
+        for line in landmark:
+            # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
+            # 한줄에 총 12개
+            # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
+            # 총 landmark list 안에 12개의 list 생성
+            landmark = line.replace(',', ' ')
+            landmark = landmark.replace('\t', ',')
+            landmark = landmark.replace('\n', '')
+            landmark = landmark.replace('   ', ',')
+            landmark = landmark.split(',')
+
+            # 필요한 위치는 2,3번째, 기획서에 5번째 까지 설명 했기 때문에 일단 5번때 까지로 에러 범위 적용
+            if len(landmark) <= 5:
+                logger.error('landmark.data format error')
+                logger.error(landmark)
+
+            else:
+                landmark_chunk.append(landmark)
+
         txt.close()
-
-        # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
-        # 한줄에 총 12개
-        # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
-        landmark = landmark.replace(',', ' ')
-        landmark = landmark.replace('\t', ',')
-        landmark = landmark.replace('\n', ',')
-        landmark = landmark.replace('   ', ',')
-        landmark = landmark.split(',')
-        # 총 landmark list 안에 12개의 list 생성
-        landmark_chunk = [landmark[i:i + 12] for i in
-                          range(0, len(landmark), 12)]
-
         # id : key , number : value 형태 dict 로 만듬
         landmark_dict = {}
         for i in range(len(landmark_chunk) - 1):
@@ -240,6 +259,11 @@ class PreShin_UI(QWidget):
         self.landmark_name_value = []
         for i in range(len(self.landmark_key)):
             self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')
+
+    def open_json(self):
+        with open(f'{os.getcwd()}/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
+            group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
+        return group
 
     # id 정렬
     def set_pre_lbl(self):
@@ -268,19 +292,14 @@ class PreShin_UI(QWidget):
             f.write(f'Predict 폴더에 {only_lbl} : 파일이 존재하지 않습니다.')
             f.close()
             messagebox("label 또는 predict 에 존재하지 않는 id가 있습니다.\n error.txt 를 확인하세요")
+            logger.error('label, predict files not matching')
 
     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
     def compare_landmark(self):
-        # label 폴더의 제일 처음 환자 id를 읽음
-        label = open(str(self.lbl_id + '/' + self.lbl_list[0]), "r", encoding="UTF-8")
-        lines = label.read()
-        lines = lines.replace("\n", ",")
-        lines = lines.split(",")
-        if lines[-1] == '':
-            del lines[-1]  # 마지막 빈 칸 제거
 
+        # label 폴더의 제일 처음 환자 id를 읽음
         # landmark, x, y, z 형태
-        lines_chunk = list_chunk_3d(lines)
+        lines_chunk = self.landmark_id_format_change(self.lbl_id, self.lbl_list[0])
 
         # landmark 번호만 따로 저장
         lines_chunk_num = []
@@ -293,15 +312,19 @@ class PreShin_UI(QWidget):
         empty_list = list(empty)  # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
 
         self.landmark_name = []  # 빈 리스트 생성
-
         # landmark 저장
         for i in range(len(lines_chunk)):
+
             for j in range(len(self.landmark_value)):
+
                 if lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
                     self.landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
                     continue
+
                 if j > len(self.landmark_value) - 2:
+
                     for k in range(len(empty_list)):
+
                         if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('None')
 
@@ -316,7 +339,30 @@ class PreShin_UI(QWidget):
         df = df.sort_values(by='Landmark_num')  # 데이터 정렬
         return df
 
+    # [id, x, y, z] 형태 list로 만듬
+    def landmark_id_format_change(self, loc, id_list):
+        label = open(str(loc + '/' + id_list), "r", encoding="UTF-8")
+        id_format = label.readlines()
+        lines = []
+        for line in id_format:
+            line = line.replace("\n", "")
+            line = line.split(",")
+            if len(line) != 4:
+                logger.error('id landmark format error : [id, x, y, z]')
+                logger.error(line)
+            else:
+                lines.append(line)
+
+        label.close()
+        return lines
+
+    def drop_landmark(self, df):
+        df.drop('x', axis=1, inplace=True)
+        df.drop('y', axis=1, inplace=True)
+        df.drop('z', axis=1, inplace=True)  # x,y,z제거
+
     def btn_export_clicked(self):
+        logger.info('btn_export_clicked')
         # lbl, pre 둘다 선택
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
 
@@ -326,6 +372,7 @@ class PreShin_UI(QWidget):
                                                             QFileDialog.ShowDirsOnly)
                 if loc_xlsx != '':  # 폴더 선택 했을때
                     file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
+
                     if f'{self.edt_xlsx_name.text()}_folder' not in file:  # 동일한 파일명이 없을때
 
                         # 폴더 생성
@@ -344,49 +391,38 @@ class PreShin_UI(QWidget):
                         self.sheet2_value()  # sheet2 landmark name 설정
 
                         for i in range(len(self.id_list)):  # 환자 수 만큼 만들고 df 합침
-                            name = self.id_list[i].split('/')
-                            label = open(str(self.lbl_id + '/' + self.id_list[i]), "r", encoding="UTF-8")
-                            lines = label.read()
-                            lines = lines.replace("\n", ",")
-                            lines = lines.split(",")
-                            if lines[-1] == '':
-                                del lines[-1]  # 마지막 빈 칸 제거
+                            name = self.id_list[i].split('/')  # 환자 번호
 
-                            lines_chunk = list_chunk_3d(lines)  # 4개 단위로 리스트 나눔 (id,x,y,z) 3D
+                            lbl_chunk = self.landmark_id_format_change(self.lbl_id, self.id_list[i])  # 4개 단위로 리스트 나눔 (id,x,y,z)
+                            pre_chunk = self.landmark_id_format_change(self.pre_id, self.id_list[i])
 
-                            predict = open(str(self.pre_id + '/' + self.id_list[i]), "r", encoding="UTF-8")
-                            lines2 = predict.read()
-                            lines2 = lines2.replace("\n", ",")
-                            lines2 = lines2.split(",")
-                            if lines2[-1] == '':
-                                del lines2[-1]  # 마지막 빈 칸 제거
-                            lines_chunk2 = list_chunk_3d(lines2)
+                            if len(lbl_chunk) != len(pre_chunk):
+                                logger.error('label, predict id landmark data does not matched id :' + name[0])
+                                continue
 
-                            df = self.id_dataframe(lines_chunk)
-                            df2 = self.id_dataframe(lines_chunk2)
+                            df_lbl = self.id_dataframe(lbl_chunk)
+                            df_pre = self.id_dataframe(pre_chunk)
 
-                            result = df.sub(df2)  # 결과값 데이터 프레임 df-df2
-                            result['Landmark_num'] = df['Landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
+                            result = df_lbl.sub(df_pre)  # 결과값 데이터 프레임 df-df2
+                            result['Landmark_num'] = df_lbl['Landmark_num']  # result[landmark_num] = 0이되서 정렬된 df[landmark_num] 넣음
 
-                            df_landmark = pd.DataFrame(lines_chunk2, columns=['Landmark_num', 'x', 'y',
-                                                                              'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성 3D
+                            # landmark 번호만 따로 생성 후 정렬
+                            df_landmark = pd.DataFrame(lbl_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # 랜드마크 번호, 이름에 대한 dataframe 생성 3D
 
                             df_landmark['Landmark_num'] = df_landmark['Landmark_num'].astype(int)
                             df_landmark.insert(1, 'Landmark_name', self.landmark_name)
-                            df_landmark.drop('x', axis=1, inplace=True)
-                            df_landmark.drop('y', axis=1, inplace=True)
-                            df_landmark.drop('z', axis=1, inplace=True)
+                            self.drop_landmark(df_landmark)  # x,y,z 제거
                             df_landmark = df_landmark.sort_values(by='Landmark_num')  # 데이터 정렬
 
+                            # aver dataframe 생성
                             new_df = pd.DataFrame({'Landmark_num': [0], 'Landmark_name': ['Aver']})
 
+                            # 정렬한 df의 아래에 aver 붙임
                             df_landmark = pd.concat([df_landmark, new_df], ignore_index=True)
 
                             result[name[0]] = (result['x'].pow(2) + result['y'].pow(2) + result['z'].pow(2)).pow(
                                 1 / 2)  # name[-2] 파일명 뒤에 있는 환자 번호, 두 점 사이의 거리 공식 적용 3D
-                            result.drop('x', axis=1, inplace=True)
-                            result.drop('y', axis=1, inplace=True)
-                            result.drop('z', axis=1, inplace=True)  # x,y,z제거
+                            self.drop_landmark(result)
                             result[name[0]].loc[-1] = result[name[0]].mean(axis=0)  # 평균 axis = 0 : 행방향, axis =1 : 열방향
                             list_land = result[name[0]].tolist()  # 다음 df에 넣기 위해 list로 만듬
 
@@ -422,16 +458,16 @@ class PreShin_UI(QWidget):
                         df_result1 = df_result.iloc[:, 0:2]
                         df_result2 = df_result.iloc[:, 2: len(df_result.columns)]
                         df_result2.drop(df_result2.tail(1).index)
-                        df_result2.loc[df.shape[0]] = df_result2.mean(axis=0)
+                        df_result2.loc[df_lbl.shape[0]] = df_result2.mean(axis=0)
 
                         # outlier 세팅
                         # result1은 기본값과 같이 사용할 수 있음
                         df_result2_outlier = df_result_outlier.iloc[:, 2: len(df_result_outlier.columns)]
                         df_result2_outlier.drop(df_result_outlier.tail(1).index)
-                        df_result2_outlier.loc[df.shape[0]] = df_result2_outlier.mean(axis=0)
+                        df_result2_outlier.loc[df_lbl.shape[0]] = df_result2_outlier.mean(axis=0)
 
                         # 기본
-                        # # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문, 마지막 행,열에 전체 aver 추가
+                        # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문, 마지막 행,열에 전체 aver 추가
                         # index 정렬
                         df_result_concat = pd.concat([df_result1, df_result2], axis=1)
                         self.df_result = df_result_concat.fillna(-99999)
@@ -467,13 +503,21 @@ class PreShin_UI(QWidget):
                         self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
                     else:
                         messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
+                        logger.error("same file name exist")
+
                 else:
                     pass
+
             else:
                 messagebox("파일명을 입력하세요")
+                logger.error("no file name")
+
         # label, predict 선택 되지 않았을 때
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             messagebox("label 또는 predict 경로를 확인 하세요.")
+            logger.error("label, predict location error")
+
+        logger.info("btn_export out")
 
     # sheet2 기본값, outlier 에 따른 값 넣기
     def sheet2(self, df, writer, avr):
@@ -517,6 +561,7 @@ class PreShin_UI(QWidget):
 
     # 시트 색상,테두리 설정
     def sheet1_setting(self, xlsx):
+        logger.info('sheet1 start')
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet1']
 
@@ -556,11 +601,14 @@ class PreShin_UI(QWidget):
 
         # 수치에 따른 색상, 결측치 값,색상 변환
         for col in range(3, ws.max_column + 1):
+
             for row in range(5, ws.max_row + 1):
                 data = float(ws.cell(row=row, column=col).value)
+
                 if data > float(self.edt_error.text()):  # 특정 수치 이상 이면 색상 변함
                     ws.cell(row=row, column=col).fill = self.red_color
                     ws.cell(row=row, column=col).border = self.thin_border
+
                 elif data == -99999:
                     ws.cell(row=row, column=col).value = ' '
                     ws.cell(row=row, column=col).fill = self.gray_color2
@@ -581,14 +629,11 @@ class PreShin_UI(QWidget):
         # Patient_ID 위에 있는 셀 병합
         ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
         wb.save(filename=xlsx)
-
-    def open_json(self):
-        with open(f'{os.getcwd()}/root/group_points_preShin.json', 'r') as inf:  # group : { landmark 번호, ...}
-            group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
-        return group
+        logger.info('sheet1 end')
 
     # 시트2 landmark 2[sella]형태로 만듬
     def sheet2_value(self):
+        logger.info('landmark2 naming start')
 
         group = self.open_json()
 
@@ -598,32 +643,40 @@ class PreShin_UI(QWidget):
 
         sheet2_group = []
         for i in range(len(group_key)):
+
             for j in range(len(group_value[i])):
+
                 for k in range(len(self.landmark_name_value)):  # landmark_name_value = 2[Sella] 형태
                     name = self.landmark_name_value[k].split('[')
+
                     if str(group_value[i][j]) == name[0]:  # name[0] = 랜드마크 번호
                         group_value[i][j] = self.landmark_name_value[k]  # value 즉 num 가 2[Sella] 형태가 됨
 
         # group 에 정의 되지 않은 landmark [None] 붙이기
         for i in range(len(group_value)):
+
             for j in range(len(group_value[i])):
+
                 if ']' in str(group_value[i][j]):
                     pass
+
                 else:
                     group_value[i][j] = str(group_value[i][j]) + '[None]'
 
         # group_name, landmark_name 합치기
         for i in range(len(group_key)):
             sheet2_group.append(group_key[i])
+
             for j in range(len(group_value[i])):
                 sheet2_group.append(group_value[i][j])
 
         self.df_sheet2_name = pd.DataFrame()
         self.df_sheet2_name.insert(0, 'Name', sheet2_group)
+        logger.info('landmark2 naming end')
 
     # sheet2 xlsx
     def sheet2_setting(self, xlsx):
-
+        logger.info('sheet2 start')
         group = self.open_json()
 
         group_key = list(group.keys())
@@ -644,13 +697,16 @@ class PreShin_UI(QWidget):
 
         for row in range(5, ws.max_row + 1):
             data = ws.cell(row=row, column=2).value
+
             if data == -99999:
                 ws.cell(row=row, column=2).value = ' '
                 ws.cell(row=row, column=2).fill = self.gray_color2
                 ws.cell(row=row, column=2).border = self.thin_border
+
             elif data == 'None':
                 ws.cell(row=row, column=2).fill = self.orange_color
                 ws.cell(row=row, column=2).border = self.thin_border
+
             ws.cell(row=row, column=1).fill = self.yellow_color
             ws.cell(row=row, column=1).border = self.thin_border
 
@@ -670,13 +726,17 @@ class PreShin_UI(QWidget):
             ws.cell(row=a, column=2).border = self.thin_border
             ws.cell(row=a, column=2).font = Font(bold=True)
             ws.cell(row=a, column=1).font = Font(bold=True)
+
             for j in range(len(group_value)):  # Group 평균
                 num = 0
                 result = 0
+
                 for row in range(b, b + len(group_value[i])):  # None, ' ' 을 제외한 합
                     data = ws.cell(row=row, column=2).value
+
                     if data == 'None' or data == ' ':
                         pass
+
                     else:
                         result += ws.cell(row=row, column=2).value
                         num += 1
@@ -688,8 +748,10 @@ class PreShin_UI(QWidget):
 
         for row in range(4, ws.max_row):  # 결측치 제외 특정 수치 이상 빨강색
             data = ws.cell(row=row, column=2).value
+
             if data == 'None' or data == ' ':  # None, ' ' 은 str 이라 제외
                 pass
+
             elif float(data) > float(self.edt_error.text()):
                 ws.cell(row=row, column=2).fill = self.red_color
                 ws.cell(row=row, column=2).border = self.thin_border
@@ -728,9 +790,11 @@ class PreShin_UI(QWidget):
         df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
         df = round(df, 4)  # 소수 자리수
         self.graph(df, xlsx)
+        logger.info('sheet2 end')
 
     # 그래프 생성
     def graph(self, df, xlsx):
+        logger.info('graph start')
         # 이미지 폴더 이름, 생성
         loc = xlsx.split('.')
         loc = loc[0].split('/')
@@ -795,6 +859,7 @@ class PreShin_UI(QWidget):
         ws.add_image(img, 'O3')
 
         wb.save(filename=xlsx)
+        logger.info('graph end')
         # 최대치 ----- 20 ~ 30
         # 소수점 3자리
 
@@ -823,10 +888,13 @@ class PreShin_UI(QWidget):
         # 바에 내용 추가
         for p in bar.patches:
             height = p.get_height()
+
             if height == -0.0001:  # 결측치 일때
                 bar.text(p.get_x() + p.get_width() / 2., -2, 'N/A', ha='center', size=10, color='r')
+
             elif height == -0.0002:  # group 에 값이 없을 때
                 bar.text(p.get_x() + p.get_width() / 2., -2, 'None', ha='center', size=10, color='orange')
+
             else:
                 bar.text(p.get_x() + p.get_width() / 2., -2, height, ha='center', size=10)
 
@@ -845,24 +913,27 @@ class PreShin_UI(QWidget):
 
         colors = ['#B3D9FF']  # total aver 파랑
         for j in range(len(y) - 1):
+
             if x[j + 1] > float(self.edt_error.text()):
                 colors.append('#FFCCCC')  # error 빨강
+
             else:
                 colors.append('#C1F0C1')  # group 초록
+
         sns.set_palette(sns.color_palette(colors))
         bar = sns.barplot(x=x, y=y, edgecolor='black')
         bar.set(title=y[0])
         for p in bar.patches:  # 바에 내용 추가
             width = p.get_width()
+
             if width == -0.0001:
                 bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+
             elif width == -0.0002:
                 bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+
             else:
                 bar.text(-2, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
 
         plt.savefig(location + f'/{y[0]}.png')  # save랑 show의 위치가 바뀌면 save는 실행되지 않는다, 파일저장
         plt.close()
-
-    def dialog_close(self):
-        self.dialog.close()
