@@ -42,6 +42,7 @@ class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.lbl_mm = None
         self.dialog = QDialog()
         self.initUI()
 
@@ -289,13 +290,10 @@ class PreShin_UI(QWidget):
             pass
 
         else:
-            # txt 파일 생성
-            f = open(f"{loc}/{name}_error.txt", 'w')
-            f.write(f'label 폴더에 {only_pre} : 파일이 존재하지 않습니다.\n')
-            f.write(f'Predict 폴더에 {only_lbl} : 파일이 존재하지 않습니다.')
-            f.close()
-            messagebox("label 또는 predict 에 존재하지 않는 id가 있습니다.\n error.txt 를 확인하세요")
+            messagebox("label 또는 predict 에 존재하지 않는 id가 있습니다.")
             logger.error('label, predict files not matching')
+            logger.error(f'label 폴더에 {only_pre} : 파일이 존재하지 않습니다.')
+            logger.error(f'Predict 폴더에 {only_lbl} : 파일이 존재하지 않습니다.')
 
     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
     def compare_landmark(self):
