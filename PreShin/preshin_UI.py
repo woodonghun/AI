@@ -183,9 +183,11 @@ class PreShin_UI(QWidget):
                     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
                     # export 에서 하면 안되서 미리 넣음
                     self.compare_landmark()
+
             else:
                 messagebox('폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                 logger.error('label file format Error')
+
         else:
             self.lbl_lbl.setText('')
         logger.info('label_btn out')
@@ -237,8 +239,8 @@ class PreShin_UI(QWidget):
             landmark = landmark.replace('   ', ',')
             landmark = landmark.split(',')
 
-            # 필요한 위치는 2,3번째, 기획서에 5번째 까지 설명 했기 때문에 일단 5번때 까지로 에러 범위 적용
-            if len(landmark) <= 5:
+            # 필요한 위치는 2,3번째
+            if len(landmark) < 3:
                 logger.error('landmark.data format error')
                 logger.error(landmark)
 
@@ -285,6 +287,7 @@ class PreShin_UI(QWidget):
 
         if only_lbl == [] and only_lbl == []:
             pass
+
         else:
             # txt 파일 생성
             f = open(f"{loc}/{name}_error.txt", 'w')
@@ -494,10 +497,10 @@ class PreShin_UI(QWidget):
 
                         self.sheet2(self.df_result, writer, aver)
                         self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
-                        self.sheet1_setting(self.new_xlsx)
-                        self.sheet1_setting(self.new_xlsx_ouliter)
-                        self.sheet2_setting(self.new_xlsx)
-                        self.sheet2_setting(self.new_xlsx_ouliter)
+                        self.sheet1_setting(self.new_xlsx, 'off')
+                        self.sheet1_setting(self.new_xlsx_ouliter, 'on')
+                        self.sheet2_setting(self.new_xlsx, 'off')
+                        self.sheet2_setting(self.new_xlsx_ouliter, 'on')
 
                         # error 출력
                         self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
@@ -559,25 +562,35 @@ class PreShin_UI(QWidget):
                                   top=borders.Side(style='thin'),
                                   bottom=borders.Side(style='thin'))
 
+
     # 시트 색상,테두리 설정
-    def sheet1_setting(self, xlsx):
+    def sheet1_setting(self, xlsx, outlier):
         logger.info('sheet1 start')
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet1']
 
         # table 에 작성된 값 삽입
         ws.cell(row=1, column=3).value = f'Error Safe Zone : {self.edt_error.text()}{self.lbl_mm.text()}'
+        ws.cell(row=1, column=3).font = Font(bold=True)
         ws.cell(row=1, column=6).value = f'Hyperparameter : Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
+        ws.cell(row=1, column=6).font = Font(bold=True)
         ws.column_dimensions['A'].width = 15  # 셀 너비 설정
         ws.column_dimensions['B'].width = 20
 
         # comment 에 작성된 값 삽입
         ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
-        ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+        ws.cell(row=2, column=6).font = Font(bold=True)
+        if 'on' == outlier:
+            ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+            ws.cell(row=2, column=3).font = Font(bold=True)
+        else:
+            pass
+
         ws.cell(row=3, column=3).value = 'Patient_ID'
+        ws.cell(row=3, column=3).font = Font(bold=True)
         ws.cell(3, 3).fill = self.blue_color
         ws.cell(4, 1).fill = self.blue_color
         ws.cell(4, 2).fill = self.blue_color
@@ -675,7 +688,7 @@ class PreShin_UI(QWidget):
         logger.info('landmark2 naming end')
 
     # sheet2 xlsx
-    def sheet2_setting(self, xlsx):
+    def sheet2_setting(self, xlsx, outlier):
         logger.info('sheet2 start')
         group = self.open_json()
 
@@ -691,9 +704,17 @@ class PreShin_UI(QWidget):
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
-
         ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
-        ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+
+        ws.cell(row=1, column=3).font = Font(bold=True)
+        ws.cell(row=1, column=6).font = Font(bold=True)
+        ws.cell(row=2, column=6).font = Font(bold=True)
+
+        if 'on' == outlier:
+            ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+            ws.cell(row=2, column=3).font = Font(bold=True)
+        else:
+            pass
 
         for row in range(5, ws.max_row + 1):
             data = ws.cell(row=row, column=2).value
@@ -715,23 +736,23 @@ class PreShin_UI(QWidget):
         ws.cell(row=4, column=2).fill = self.blue_color
         ws.cell(row=4, column=2).border = self.thin_border
 
-        a = 5  # 시작줄
-        b = 6
+        group_row= 5  # 시작줄
+        landmark_row = 6
 
         # group 색상 초록색
         for i in range(len(group_key)):  # Group 색상
-            ws.cell(row=a, column=1).fill = self.green_color
-            ws.cell(row=a, column=1).border = self.thin_border
-            ws.cell(row=a, column=2).fill = self.green_color
-            ws.cell(row=a, column=2).border = self.thin_border
-            ws.cell(row=a, column=2).font = Font(bold=True)
-            ws.cell(row=a, column=1).font = Font(bold=True)
+            ws.cell(row=group_row, column=1).fill = self.green_color
+            ws.cell(row=group_row, column=1).border = self.thin_border
+            ws.cell(row=group_row, column=2).fill = self.green_color
+            ws.cell(row=group_row, column=2).border = self.thin_border
+            ws.cell(row=group_row, column=2).font = Font(bold=True)
+            ws.cell(row=group_row, column=1).font = Font(bold=True)
 
             for j in range(len(group_value)):  # Group 평균
                 num = 0
                 result = 0
 
-                for row in range(b, b + len(group_value[i])):  # None, ' ' 을 제외한 합
+                for row in range(landmark_row, landmark_row + len(group_value[i])):  # None, ' ' 을 제외한 합
                     data = ws.cell(row=row, column=2).value
 
                     if data == 'None' or data == ' ':
@@ -741,10 +762,10 @@ class PreShin_UI(QWidget):
                         result += ws.cell(row=row, column=2).value
                         num += 1
 
-                ws[f'B{a}'] = result / num  # Group 평균 삽입
+                ws[f'B{group_row}'] = result / num  # Group 평균 삽입
 
-            a += len(group_value[i]) + 1
-            b += len(group_value[i]) + 1
+            group_row += len(group_value[i]) + 1
+            landmark_row += len(group_value[i]) + 1
 
         for row in range(4, ws.max_row):  # 결측치 제외 특정 수치 이상 빨강색
             data = ws.cell(row=row, column=2).value
@@ -756,13 +777,13 @@ class PreShin_UI(QWidget):
                 ws.cell(row=row, column=2).fill = self.red_color
                 ws.cell(row=row, column=2).border = self.thin_border
 
-        c = 5
-        n = 0
+        group_land_row = 5
+        count = 0
         for h in range(len(group_value)):  # Group 바뀔때 마다 줄 띄우기
-            ws.insert_rows(c + n)
-            ws.insert_rows(c + n + 1)
-            n += 1
-            c += len(group_value[h]) + 2
+            ws.insert_rows(group_land_row + count)
+            ws.insert_rows(group_land_row + count + 1)
+            group_land_row += 1
+            count += len(group_value[h]) + 2
 
         ws.column_dimensions['A'].width = 23
         ws.column_dimensions['B'].width = 15

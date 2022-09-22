@@ -17,7 +17,7 @@ def messagebox(i: str):
     signBox.exec_()
 
 
-def data_open():
+def data_open_3d():
     file_list = os.listdir(os.getcwd())
     if 'group_points_preShin.json' not in file_list:
         messagebox("Group_points_preShin.json 파일의 경로를 확인해 주세요")
@@ -28,10 +28,21 @@ def data_open():
         logger.error('landmark.dat file location error')
         return 0
 
+# 나중에 2d 용 데이터 나오면 이용
+# def data_open_2d():
+#     file_list = os.listdir(os.getcwd())
+#     if 'group_points_preShin.json' not in file_list:
+#         messagebox("Group_points_preShin.json 파일의 경로를 확인해 주세요")
+#         logger.error('group_points_preShin.json file location error')
+#         return 0
+#     elif 'landmark.dat' not in file_list:
+#         messagebox("landmark.dat 파일의 경로를 확인해 주세요")
+#         logger.error('landmark.dat file location error')
+#         return 0
 
 def btn_PreShin_clicked():
     logger.info('btn_PreShin_3D UI start')
-    if data_open() == 0:
+    if data_open_3d() == 0:
         return
     PreShin.preshin_UI.PreShin_UI()
     logger.info('btn_PreShin_3D UI end')
@@ -40,6 +51,8 @@ def btn_PreShin_clicked():
 def btn_PreShin_2D_clicked():
     logger.info('btn_PreShin_2D UI start')
     PreShin.preshin_UI_2d.PreShin_UI_2d()
+    if data_open_3d() == 0:
+        return
     logger.info('btn_PreShin_2D UI end')
 
 

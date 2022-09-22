@@ -17,7 +17,7 @@ class logger():
 
         # 파일 저장
         # console = logging.StreamHandler()
-        file_handler = logging.FileHandler(filename=f"{date_s}.log")
+        file_handler = logging.FileHandler(filename=f"C:\woo_project\AI\log\{date_s}.log")
 
         # handler 출력 format 지정
         # console.setFormatter(formatter)

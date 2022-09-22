@@ -9,6 +9,7 @@ import PreShin.preshin_UI
 from PreShin.preshin_UI import average, messagebox
 from PreShin.loggers import logger
 
+
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
         super().__init__()
@@ -69,7 +70,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         return df
 
     # x,y 제거
-    def drop_landmark(self,df):
+    def drop_landmark(self, df):
         df.drop('x', axis=1, inplace=True)
         df.drop('y', axis=1, inplace=True)
 
@@ -186,10 +187,10 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.sheet2(self.df_result, writer, aver)
                         self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
 
-                        self.sheet1_setting(self.new_xlsx)
-                        self.sheet1_setting(self.new_xlsx_ouliter)
-                        self.sheet2_setting(self.new_xlsx)
-                        self.sheet2_setting(self.new_xlsx_ouliter)
+                        self.sheet1_setting(self.new_xlsx, 'off')
+                        self.sheet1_setting(self.new_xlsx_ouliter, 'on')
+                        self.sheet2_setting(self.new_xlsx, 'off')
+                        self.sheet2_setting(self.new_xlsx_ouliter, 'on')
                         ############
                         self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
                     else:
