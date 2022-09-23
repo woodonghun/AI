@@ -28,6 +28,7 @@ def data_open_3d():
         logger.error('landmark.dat file location error')
         return 0
 
+
 # 나중에 2d 용 데이터 나오면 이용
 # def data_open_2d():
 #     file_list = os.listdir(os.getcwd())

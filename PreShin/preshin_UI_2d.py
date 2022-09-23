@@ -15,7 +15,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         super().__init__()
 
     # [id, x, y] 형태 list로 만듬
-    def landmark_id_format_change(self, loc, id_list):
+    def landmark_id_format_change(self, loc: str, id_list: str):
         label = open(str(loc + '/' + id_list), "r", encoding="UTF-8")
         id_format = label.readlines()
         lines = []
@@ -59,7 +59,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('None')
 
-    def id_dataframe(self, lines_chunk):
+    def id_dataframe(self, lines_chunk: list):
         df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
         df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
         df['y'] = df['y'].astype(float)
@@ -93,7 +93,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.set_pre_lbl()  # id 정렬
                         wb = openpyxl.Workbook()
                         self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
-                        self.new_xlsx_ouliter = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
+                        self.new_xlsx_outlier = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
@@ -164,8 +164,6 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
                         self.df_result.reset_index(inplace=True, drop='index')
 
-                        self.sheet_color()
-
                         # 엑셀
                         writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
@@ -178,7 +176,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.df_result_outlier.reset_index(inplace=True, drop='index')
 
                         # outlier 엑셀
-                        writer_outlier = pd.ExcelWriter(self.new_xlsx_ouliter, engine='openpyxl')
+                        writer_outlier = pd.ExcelWriter(self.new_xlsx_outlier, engine='openpyxl')
                         self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
                                                         index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
@@ -188,11 +186,11 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
 
                         self.sheet1_setting(self.new_xlsx, 'off')
-                        self.sheet1_setting(self.new_xlsx_ouliter, 'on')
+                        self.sheet1_setting(self.new_xlsx_outlier, 'on')
                         self.sheet2_setting(self.new_xlsx, 'off')
-                        self.sheet2_setting(self.new_xlsx_ouliter, 'on')
+                        self.sheet2_setting(self.new_xlsx_outlier, 'on')
                         ############
-                        self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
+                        self.error_id()
                     else:
                         messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
                         logger.error("same file name exist")

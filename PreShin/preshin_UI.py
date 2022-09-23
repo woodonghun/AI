@@ -11,6 +11,8 @@ from PySide2.QtWidgets import QWidget, QPushButton, QFileDialog, QDialog, QLabel
 import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
+from typing import List
+
 from PreShin.loggers import logger
 
 
@@ -40,9 +42,38 @@ def messagebox(i: str):
 
 class PreShin_UI(QWidget):
     def __init__(self):
+        self.lbl_id = str
+        self.lbl_list = List[str]
+        self.pre_list = List[str]
+        self.pre_id = str
+        self.landmark_name_value = list
+        self.landmark_value = List[str]
+        self.landmark_key = List[str]
+        self.id_list = List[str]
+        self.loc_xlsx = str
+        self.new_xlsx_outlier = str
+        self.new_xlsx = str
+        self.landmark_name = list
+        self.number = List[int]
+        self.df_result = pd.DataFrame
+        self.df_result_outlier = pd.DataFrame
+        self.group_num = list
+
         super().__init__()
 
-        self.lbl_mm = None
+        self.thin_border = Border(left=borders.Side(style='thin'),
+                                  right=borders.Side(style='thin'),
+                                  top=borders.Side(style='thin'),
+                                  bottom=borders.Side(style='thin'))
+        self.blue_color = PatternFill(start_color='b3d9ff', end_color='b3d9ff', fill_type='solid')
+        self.green_color = PatternFill(start_color='c1f0c1', end_color='c1f0c1', fill_type='solid')
+        self.red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
+        self.yellow_color = PatternFill(start_color='ffffb3', end_color='ffffb3', fill_type='solid')
+        self.gray_color2 = PatternFill(start_color='e0e0eb', end_color='e0e0eb', fill_type='solid')
+        self.gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
+        self.blue_color2 = PatternFill(start_color='ccf5ff', end_color='ccf5ff', fill_type='solid')
+        self.orange_color = PatternFill(start_color='ff9900', end_color='ff9900', fill_type='solid')
+
         self.dialog = QDialog()
         self.initUI()
 
@@ -169,7 +200,7 @@ class PreShin_UI(QWidget):
         if self.lbl_id != '':
             self.lbl_list = os.listdir(str(self.lbl_id))  # 폴더 경로에 있는 파일 읽기
 
-            if self.lbl_list != []:  # 빈 폴더가 아닐 때
+            if self.lbl_list is not None:  # 빈 폴더가 아닐 때
 
                 for i in range(len(self.lbl_list)):
                     path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
@@ -200,7 +231,7 @@ class PreShin_UI(QWidget):
         if self.pre_id != '':
             self.pre_list = os.listdir(str(self.pre_id))  # 경로에 있는 파일 읽기
 
-            if self.pre_list != []:  # 빈 폴더가 아닐때
+            if self.pre_list is not None:  # 빈 폴더가 아닐때
 
                 for i in range(len(self.pre_list)):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
@@ -280,7 +311,7 @@ class PreShin_UI(QWidget):
         self.id_list = [(j + '.txt') for j in id_list]
 
     # label, predict 폴더 비교 없는 파일 출력
-    def error_id(self, loc, name):
+    def error_id(self):
         set_lbl = set(self.lbl_list)
         set_pre = set(self.pre_list)
         only_lbl = list(set_lbl - set_pre)  # label 만 있는 파일
@@ -329,7 +360,7 @@ class PreShin_UI(QWidget):
                         if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
                             self.landmark_name.append('None')
 
-    def id_dataframe(self, lines_chunk):
+    def id_dataframe(self, lines_chunk: list):
         df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y', 'z'])  # label 데이터 프레임
         df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
         df['y'] = df['y'].astype(float)
@@ -386,7 +417,7 @@ class PreShin_UI(QWidget):
                         # 엑셀 생성
                         wb = openpyxl.Workbook()
                         self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
-                        self.new_xlsx_ouliter = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
+                        self.new_xlsx_outlier = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
@@ -475,8 +506,6 @@ class PreShin_UI(QWidget):
                         self.df_result.iat[-1, -1] = aver
                         self.df_result.reset_index(inplace=True, drop='index')
 
-                        self.sheet_color()
-
                         # 엑셀
                         writer = pd.ExcelWriter(self.new_xlsx, engine='openpyxl')
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
@@ -489,19 +518,19 @@ class PreShin_UI(QWidget):
                         self.df_result_outlier.reset_index(inplace=True, drop='index')
 
                         # outlier 엑셀
-                        writer_outlier = pd.ExcelWriter(self.new_xlsx_ouliter, engine='openpyxl')
+                        writer_outlier = pd.ExcelWriter(self.new_xlsx_outlier, engine='openpyxl')
                         self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
                                                         index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
                         self.sheet2(self.df_result, writer, aver)
-                        self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
                         self.sheet1_setting(self.new_xlsx, 'off')
-                        self.sheet1_setting(self.new_xlsx_ouliter, 'on')
                         self.sheet2_setting(self.new_xlsx, 'off')
-                        self.sheet2_setting(self.new_xlsx_ouliter, 'on')
+                        self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
+                        self.sheet1_setting(self.new_xlsx_outlier, 'on')
+                        self.sheet2_setting(self.new_xlsx_outlier, 'on')
 
                         # error 출력
-                        self.error_id(self.loc_xlsx, self.edt_xlsx_name.text())
+                        self.error_id()
                     else:
                         messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
                         logger.error("same file name exist")
@@ -521,7 +550,7 @@ class PreShin_UI(QWidget):
         logger.info("btn_export out")
 
     # sheet2 기본값, outlier 에 따른 값 넣기
-    def sheet2(self, df, writer, avr):
+    def sheet2(self, df: pd.DataFrame, writer: pd.ExcelWriter, avr: float):
         df_sheet2_name_aver = pd.DataFrame()
         df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df[
             'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
@@ -544,25 +573,8 @@ class PreShin_UI(QWidget):
 
         writer.save()  # Sheet2 저장
 
-    # 시트 색상, 테두리 스타일
-    def sheet_color(self):
-        self.yellow_color = PatternFill(start_color='ffffb3', end_color='ffffb3', fill_type='solid')
-        self.red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
-        self.green_color = PatternFill(start_color='c1f0c1', end_color='c1f0c1', fill_type='solid')
-        self.blue_color = PatternFill(start_color='b3d9ff', end_color='b3d9ff', fill_type='solid')
-        self.blue_color2 = PatternFill(start_color='ccf5ff', end_color='ccf5ff', fill_type='solid')
-        self.gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
-        self.gray_color2 = PatternFill(start_color='e0e0eb', end_color='e0e0eb', fill_type='solid')
-        self.orange_color = PatternFill(start_color='ff9900', end_color='ff9900', fill_type='solid')
-
-        self.thin_border = Border(left=borders.Side(style='thin'),
-                                  right=borders.Side(style='thin'),
-                                  top=borders.Side(style='thin'),
-                                  bottom=borders.Side(style='thin'))
-
-
     # 시트 색상,테두리 설정
-    def sheet1_setting(self, xlsx, outlier):
+    def sheet1_setting(self, xlsx: str, outlier: str):
         logger.info('sheet1 start')
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet1']
@@ -686,7 +698,7 @@ class PreShin_UI(QWidget):
         logger.info('landmark2 naming end')
 
     # sheet2 xlsx
-    def sheet2_setting(self, xlsx, outlier):
+    def sheet2_setting(self, xlsx: str, outlier: str):
         logger.info('sheet2 start')
         group = self.open_json()
 
@@ -696,7 +708,7 @@ class PreShin_UI(QWidget):
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet2']
 
-        # table에 default값 출력
+        # table 에 default 값 출력
         ws.cell(row=1, column=3).value = f'Error Safe Zone : {self.edt_error.text()}{self.lbl_mm.text()}'
         ws.cell(row=1, column=6).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
@@ -734,7 +746,7 @@ class PreShin_UI(QWidget):
         ws.cell(row=4, column=2).fill = self.blue_color
         ws.cell(row=4, column=2).border = self.thin_border
 
-        group_row= 5  # 시작줄
+        group_row = 5  # 시작줄
         landmark_row = 6
 
         # group 색상 초록색
@@ -812,7 +824,7 @@ class PreShin_UI(QWidget):
         logger.info('sheet2 end')
 
     # 그래프 생성
-    def graph(self, df, xlsx):
+    def graph(self, df: pd.DataFrame, xlsx: str):
         logger.info('graph start')
         # 이미지 폴더 이름, 생성
         loc = xlsx.split('.')
@@ -883,7 +895,7 @@ class PreShin_UI(QWidget):
         # 소수점 3자리
 
     # 세로 graph 제작
-    def vertical_graph(self, x, y, location):
+    def vertical_graph(self, x: list, y: list, location: str):
 
         plt.figure(figsize=(13, 3))  # graph 사이즈
         plt.ylim([-3, 15])  # 범위
@@ -922,7 +934,7 @@ class PreShin_UI(QWidget):
         plt.close()
 
     #  가로 graph
-    def horizon_graph(self, x, y, location):
+    def horizon_graph(self, x: list, y: list, location: str):
         plt.figure(figsize=(12, 20))
         plt.xlim([-3, 15])  # 범위
         plt.axvline(x=0, color='black', linestyle='--')  # vertical

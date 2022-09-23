@@ -13,7 +13,7 @@ class logger():
         elif CONFIG['log_level'] == 'debug':
             logger.setLevel(logging.DEBUG)
         # formatter 지정
-        formatter = logging.Formatter("%(asctime)s - [%(module)s - %(funcName)s] - %(levelname)s - %(message)s")
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - [%(filename)s - %(funcName)s] -  %(message)s")
 
         # 파일 저장
         # console = logging.StreamHandler()
@@ -32,3 +32,5 @@ class logger():
 
 _logger = logger()
 logger = _logger.logs()
+
+# logger.info(f'class : {self.__class__.__name__}') 클래스에 넣고싶을 때 사용
