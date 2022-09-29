@@ -14,7 +14,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
         super().__init__()
 
-    # [id, x, y] 형태 list로 만듬
+    # [id, x, y] 형태 list 로 만듬
     def landmark_id_format_change(self, loc: str, id_list: str):
         label = open(str(loc + '/' + id_list), "r", encoding="UTF-8")
         id_format = label.readlines()
@@ -31,10 +31,10 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         label.close()
         return lines
 
-    def compare_landmark(self):
+    def compare_landmark(self, lbl_id: str, lbl_list: list):
         # label 폴더의 제일 처음 환자 id를 읽음
         # landmark, x, y형태
-        lines_chunk = self.landmark_id_format_change(self.lbl_id, self.lbl_list[0])
+        lines_chunk = self.landmark_id_format_change(lbl_id, lbl_list[0])
 
         # landmark 번호만 따로 저장
         lines_chunk_num = []
@@ -46,18 +46,20 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         empty = set_lines_chunk_num - set_landmark_value
         empty_list = list(empty)  # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
 
-        self.landmark_name = []  # 빈 리스트 생성
+        landmark_name = []  # 빈 리스트 생성
 
         # landmark 저장
         for i in range(len(lines_chunk)):
             for j in range(len(self.landmark_value)):
                 if lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
-                    self.landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
+                    landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
                     continue
                 if j > len(self.landmark_value) - 2:
                     for k in range(len(empty_list)):
                         if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
-                            self.landmark_name.append('None')
+                            landmark_name.append('None')
+
+        return landmark_name
 
     def id_dataframe(self, lines_chunk: list):
         df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
@@ -115,7 +117,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                             self.drop_landmark(df_landmark)
                             df_landmark = df_landmark.sort_values(by='Landmark_num')  # 데이터 정렬
 
-                            new_df = pd.DataFrame({'Landmark_num': [0], 'Landmark_name': ['Aver']})
+                            new_df = pd.DataFrame({'Landmark_num': [''], 'Landmark_name': ['Aver']})
 
                             df_landmark = pd.concat([df_landmark, new_df], ignore_index=True)
 
@@ -142,7 +144,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
 
                         group = sum(self.group_num, [])
                         self.number = [int(i.split('[')[0]) for i in group]
-                        self.number.append(0)
+                        self.number.append('')
 
                         df_result = df_result.query(f'Landmark_num == {self.number}')
                         df_result_outlier = df_result_outlier.query(f'Landmark_num == {self.number}')
@@ -191,17 +193,18 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.sheet2_setting(self.new_xlsx_outlier, 'on')
                         ############
                         self.error_id()
+                        messagebox('notice', 'Excel 생성이 완료 되었습니다.')
                     else:
-                        messagebox("동일한 파일명이 존재합니다. 다시 입력하세요")
+                        messagebox('Warning', "동일한 파일명이 존재합니다. 다시 입력하세요")
                         logger.error("same file name exist")
                 else:
                     pass
             else:
-                messagebox("파일명을 입력하세요")
+                messagebox('Warning', "파일명을 입력하세요")
                 logger.error("no file name")
         # label, predict 선택 되지 않았을 때
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
-            messagebox("label 또는 predict 경로를 확인 하세요.")
+            messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
 
         logger.info("btn_export out")
 
