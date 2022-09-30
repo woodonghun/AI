@@ -12,6 +12,7 @@ from PySide2.QtWidgets import QWidget, QPushButton, QFileDialog, QDialog, QLabel
 import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
+from openpyxl.utils import get_column_letter
 
 from PreShin.loggers import logger
 
@@ -75,6 +76,8 @@ class PreShin_UI(QWidget):
         self.gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
         self.blue_color2 = PatternFill(start_color='ccf5ff', end_color='ccf5ff', fill_type='solid')
         self.orange_color = PatternFill(start_color='ff9900', end_color='ff9900', fill_type='solid')
+        self.outlier_color = PatternFill(start_color='C0504D', end_color='C0504D', fill_type='solid')
+        self.white_color = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
 
         self.dialog = QDialog()
         self.initUI()
@@ -87,7 +90,7 @@ class PreShin_UI(QWidget):
         aug = '0'
         comment = 'write comment'
         safe_zone = '3'
-        outlier = '25'
+        outlier = '5'
 
         self.table = QTableWidget(4, 2, self.dialog)
         self.table.setSortingEnabled(False)  # 정렬 기능
@@ -387,7 +390,7 @@ class PreShin_UI(QWidget):
                 logger.error(line)
             else:
                 lines.append(line)
-        lines.sort(key=lambda x:x[0])
+        lines.sort(key=lambda x: x[0])
         label.close()
         return lines
 
@@ -420,7 +423,6 @@ class PreShin_UI(QWidget):
                         # 엑셀 생성
                         wb = openpyxl.Workbook()
                         self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
-                        self.new_xlsx_outlier = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}_outlier.xlsx'
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
@@ -505,8 +507,47 @@ class PreShin_UI(QWidget):
                         # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문, 마지막 행,열에 전체 aver 추가
                         # index 정렬
                         df_result_concat = pd.concat([df_result1, df_result2], axis=1)
-                        self.df_result = df_result_concat.fillna(-99999)
-                        self.df_result.iat[-1, -1] = aver
+                        df_result_concat.iat[-1, -1] = aver
+
+                        # 기본 표준 편차 설정
+                        df_copy = df_result_concat.copy()
+                        df_copy2 = df_copy.iloc[:-1, 2:-1]
+                        df_std_row = pd.DataFrame(df_copy2.std(axis=1))
+                        df_std_row.columns = ['std']
+                        df_std_column = pd.DataFrame(df_copy2.std())
+                        df_std_column = df_std_column.transpose()
+                        df_std_column['Landmark_name'] = ['std']
+                        df_std_column['Landmark_num'] = ['']
+                        df_std_column.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
+                        df_result_std = pd.concat([df_result_concat, df_std_column])
+                        df_result_std = pd.concat([df_result_std, df_std_row], axis=1)
+
+                        # outlier 세팅
+                        df_result_outlier_concat = pd.concat([df_result1, df_result2_outlier], axis=1)
+                        df_result_outlier_concat.iat[-1, -1] = aver_outlier
+
+                        # outlier 표준 편차 설정
+                        df_copy_outlier = df_result_outlier_concat.copy()
+                        df_copy2_outlier = df_copy_outlier.iloc[:-1, 2:-1]
+                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1))
+                        df_std_row_outlier.columns = ['std']
+                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std())
+                        df_std_column_outlier = df_std_column_outlier.transpose()
+                        df_std_column_outlier['Landmark_name'] = ['std']
+                        df_std_column_outlier['Landmark_num'] = ['']
+                        df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
+                        df_result_std_outlier = pd.concat([df_result_outlier_concat, df_std_column_outlier])
+                        df_result_std_outlier = pd.concat([df_result_std_outlier, df_std_row_outlier], axis=1)
+
+                        aver_std = "Landmark_name == ['Aver','std']"
+                        df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
+                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['outlier_Aver', 'outlier_std'])
+                        df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
+                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'outlier_Aver', 'std': 'outlier_std'})
+                        df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
+                        df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
+
+                        self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')
 
                         # 엑셀
@@ -514,23 +555,13 @@ class PreShin_UI(QWidget):
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
                                                 index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
-                        # outlier 세팅
-                        df_result_outlier_concat = pd.concat([df_result1, df_result2_outlier], axis=1)
-                        self.df_result_outlier = df_result_outlier_concat.fillna(-99999)
-                        self.df_result_outlier.iat[-1, -1] = aver_outlier
-                        self.df_result_outlier.reset_index(inplace=True, drop='index')
-
-                        # outlier 엑셀
-                        writer_outlier = pd.ExcelWriter(self.new_xlsx_outlier, engine='openpyxl')
-                        self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
-                                                        index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
-
-                        self.sheet2(self.df_result, writer, aver)
-                        self.sheet1_setting(self.new_xlsx, 'off')
-                        self.sheet2_setting(self.new_xlsx, 'off')
-                        self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
-                        self.sheet1_setting(self.new_xlsx_outlier, 'on')
-                        self.sheet2_setting(self.new_xlsx_outlier, 'on')
+                        self.sheet2(self.df_result, writer, aver, aver_outlier)
+                        self.sheet1_setting(self.new_xlsx)
+                        self.sheet2_setting(self.new_xlsx)
+                        self.sheet3_setting(self.new_xlsx)
+                        # self.sheet2(self.df_result_outlier, writer_outlier, aver, aver_outlier)
+                        # self.sheet1_setting(self.new_xlsx_outlier)
+                        # self.sheet2_setting(self.new_xlsx_outlier)
 
                         # error 출력
                         self.error_id()
@@ -553,32 +584,8 @@ class PreShin_UI(QWidget):
 
         logger.info("btn_export out")
 
-    # sheet2 기본값, outlier 에 따른 값 넣기
-    def sheet2(self, df: pd.DataFrame, writer: pd.ExcelWriter, avr: float):
-        df_sheet2_name_aver = pd.DataFrame()
-        df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df[
-            'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
-        df_sheet2_name_aver['Aver'] = df['Aver']
-        df_sheet2_name_aver = df_sheet2_name_aver.drop(
-            df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
-
-        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name',
-                                              how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
-
-        df_sheet2.to_excel(writer, startcol=0, startrow=3,
-                           index=False, sheet_name='Sheet2')
-
-        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr]})
-
-        df_sheet2 = pd.concat([new_df, df_sheet2])
-        df_sheet2 = df_sheet2.fillna('None')
-        df_sheet2.to_excel(writer, startcol=0, startrow=2,
-                           index=False, sheet_name='Sheet2')
-
-        writer.save()  # Sheet2 저장
-
     # 시트 색상,테두리 설정
-    def sheet1_setting(self, xlsx: str, outlier: str):
+    def sheet1_setting(self, xlsx: str):
         logger.info('sheet1 start')
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet1']
@@ -589,8 +596,8 @@ class PreShin_UI(QWidget):
         ws.cell(4, 1).fill = self.blue_color
         ws.cell(4, 2).fill = self.blue_color
 
-        # landmark_num, landmark_name 색상
-        for j in range(ws.max_row - 5):
+        # landmark_num, landmark_name 색상 5 = 시작하는 row, 3 = outlier,std개수
+        for j in range(ws.max_row - 5 - 3):
             ws.cell(5 + j, 1).border = self.thin_border
             ws.cell(5 + j, 1).fill = self.green_color
             ws.cell(5 + j, 2).border = self.thin_border
@@ -598,13 +605,15 @@ class PreShin_UI(QWidget):
 
         # Aver value 색상
         for row in range(5, ws.max_row + 1):
-            ws.cell(row=row, column=ws.max_column).fill = self.blue_color2
-            ws.cell(row=row, column=ws.max_column).border = self.thin_border
+            for p in range(4):
+                ws.cell(row=row, column=ws.max_column - p).fill = self.blue_color2
+                ws.cell(row=row, column=ws.max_column - p).border = self.thin_border
 
         # Aver value 색상
         for col in range(3, ws.max_column + 1):
-            ws.cell(row=ws.max_row, column=col).fill = self.blue_color2
-            ws.cell(row=ws.max_row, column=col).border = self.thin_border
+            for w in range(4):
+                ws.cell(row=ws.max_row - w, column=col).fill = self.blue_color2
+                ws.cell(row=ws.max_row - w, column=col).border = self.thin_border
 
         # 수치에 따른 색상, 결측치 값,색상 변환
         for col in range(3, ws.max_column + 1):
@@ -614,8 +623,13 @@ class PreShin_UI(QWidget):
                 data = float(ws.cell(row=row, column=col).value)
 
                 if data > float(self.edt_error.text()):  # 특정 수치 이상 이면 색상 변함
-                    ws.cell(row=row, column=col).fill = self.red_color
-                    ws.cell(row=row, column=col).border = self.thin_border
+                    if data > float(self.edt_outlier.text()):
+                        ws.cell(row=row, column=col).fill = self.outlier_color
+                        ws.cell(row=row, column=col).font = Font(bold=True, color='FFFFFF')
+                        ws.cell(row=row, column=col).border = self.thin_border
+                    else:
+                        ws.cell(row=row, column=col).fill = self.red_color
+                        ws.cell(row=row, column=col).border = self.thin_border
 
                 elif data == -99999:
                     ws.cell(row=row, column=col).value = ' '
@@ -629,10 +643,11 @@ class PreShin_UI(QWidget):
                 ws.cell(row=row, column=2).fill = self.red_color
 
         # Aver 색상 변경
-        ws.cell(4, ws.max_column).fill = self.blue_color
-        ws.cell(4, ws.max_column).border = self.thin_border
-        ws.cell(ws.max_row, 2).fill = self.blue_color
-        ws.cell(ws.max_row, 2).border = self.thin_border
+        for f in range(4):
+            ws.cell(4, ws.max_column - f).fill = self.blue_color
+            ws.cell(4, ws.max_column - f).border = self.thin_border
+            ws.cell(ws.max_row - f, 2).fill = self.blue_color
+            ws.cell(ws.max_row - f, 2).border = self.thin_border
 
         # table 에 작성된 값 삽입
         # 따로 작성 하는 것은 제일 마지막에 작성 해야 한다. 최대 row, column 을 인식 하기 때문
@@ -643,20 +658,22 @@ class PreShin_UI(QWidget):
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
         ws.cell(row=1, column=6).font = Font(bold=True)
-        ws.column_dimensions['A'].width = 15  # 셀 너비 설정
+
+        # 셀 너비 설정
+        ws.column_dimensions['A'].width = 15
         ws.column_dimensions['B'].width = 20
+        ws.column_dimensions[get_column_letter(ws.max_column)].width = 15
+        ws.column_dimensions[get_column_letter(ws.max_column - 1)].width = 15
 
         # comment 에 작성된 값 삽입
         ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
         ws.cell(row=2, column=6).font = Font(bold=True)
-        if 'on' == outlier:
-            ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
-            ws.cell(row=2, column=3).font = Font(bold=True)
-        else:
-            pass
+
+        ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+        ws.cell(row=2, column=3).font = Font(bold=True)
 
         # Patient_ID 위에 있는 셀 병합
-        ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 1)
+        ws.merge_cells(start_row=3, start_column=3, end_row=3, end_column=ws.max_column - 4)
         wb.save(filename=xlsx)
         logger.info('sheet1 end')
 
@@ -703,8 +720,27 @@ class PreShin_UI(QWidget):
         self.df_sheet2_name.insert(0, 'Name', sheet2_group)
         logger.info('landmark2 naming end')
 
+    # sheet2 기본값, outlier 에 따른 값 넣기
+    def sheet2(self, df: pd.DataFrame, writer: pd.ExcelWriter, avr: float, outlier_aver: float):
+        df_sheet2_name_aver = pd.DataFrame()
+        df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df[
+            'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
+        df_sheet2_name_aver['Aver'] = df['Aver']
+        df_sheet2_name_aver['outlier_Aver'] = df['outlier_Aver']
+        df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
+        df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name', how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
+
+        df_sheet2.to_excel(writer, startcol=0, startrow=3,
+                           index=False, sheet_name='Sheet2')
+        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr], 'outlier_Aver': [outlier_aver]})
+        df_sheet2 = pd.concat([new_df, df_sheet2])
+        df_sheet2 = df_sheet2.fillna('None')
+        df_sheet2.to_excel(writer, startcol=0, startrow=2,
+                           index=False, sheet_name='Sheet2')
+        writer.save()  # Sheet2 저장
+
     # sheet2 xlsx
-    def sheet2_setting(self, xlsx: str, outlier: str):
+    def sheet2_setting(self, xlsx: str):
         logger.info('sheet2 start')
         group = self.open_json()
 
@@ -726,49 +762,49 @@ class PreShin_UI(QWidget):
         ws.cell(row=1, column=6).font = Font(bold=True)
         ws.cell(row=2, column=6).font = Font(bold=True)
 
-        if 'on' == outlier:
-            ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
-            ws.cell(row=2, column=3).font = Font(bold=True)
-        else:
-            pass
+        ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+        ws.cell(row=2, column=3).font = Font(bold=True)
 
+        # num[landmark_name],aver 의 색상
         for row in range(5, ws.max_row + 1):
-            data = ws.cell(row=row, column=2).value
+            for a in range(2):
+                data = ws.cell(row=row, column=2 + a).value
 
-            if data == -99999:
-                ws.cell(row=row, column=2).value = ' '
-                ws.cell(row=row, column=2).fill = self.gray_color2
-                ws.cell(row=row, column=2).border = self.thin_border
+                if data == -99999:
+                    ws.cell(row=row, column=2 + a).value = ' '
+                    ws.cell(row=row, column=2 + a).fill = self.gray_color2
+                    ws.cell(row=row, column=2 + a).border = self.thin_border
 
-            elif data == 'None':
-                ws.cell(row=row, column=2).fill = self.orange_color
-                ws.cell(row=row, column=2).border = self.thin_border
+                elif data == 'None':
+                    ws.cell(row=row, column=2 + a).fill = self.orange_color
+                    ws.cell(row=row, column=2 + a).border = self.thin_border
 
             ws.cell(row=row, column=1).fill = self.yellow_color
             ws.cell(row=row, column=1).border = self.thin_border
 
-        ws.cell(row=4, column=1).fill = self.blue_color
-        ws.cell(row=4, column=1).border = self.thin_border
-        ws.cell(row=4, column=2).fill = self.blue_color
-        ws.cell(row=4, column=2).border = self.thin_border
+        # Total_aver, aver 색상
+        for e in range(3):
+            ws.cell(row=4, column=1 + e).fill = self.blue_color
+            ws.cell(row=4, column=1 + e).border = self.thin_border
 
         group_row = 5  # 시작줄
         landmark_row = 6
 
         # group 색상 초록색
-        for i in range(len(group_key)):  # Group 색상
-            ws.cell(row=group_row, column=1).fill = self.green_color
-            ws.cell(row=group_row, column=1).border = self.thin_border
-            ws.cell(row=group_row, column=2).fill = self.green_color
-            ws.cell(row=group_row, column=2).border = self.thin_border
-            ws.cell(row=group_row, column=2).font = Font(bold=True)
-            ws.cell(row=group_row, column=1).font = Font(bold=True)
+        for i in range(len(group_key)):
+            # Group 색상
+            for h in range(3):
+                ws.cell(row=group_row, column=1 + h).fill = self.green_color
+                ws.cell(row=group_row, column=1 + h).border = self.thin_border
+                ws.cell(row=group_row, column=1 + h).font = Font(bold=True)
 
-            for j in range(len(group_value)):  # Group 평균
+            # Group 평균
+            for j in range(len(group_value)):
                 num = 0
                 result = 0
-
-                for row in range(landmark_row, landmark_row + len(group_value[i])):  # None, ' ' 을 제외한 합
+                result_outlier = 0
+                # None, ' ' 을 제외한 합
+                for row in range(landmark_row, landmark_row + len(group_value[i])):
                     data = ws.cell(row=row, column=2).value
 
                     if data == 'None' or data == ' ':
@@ -776,22 +812,30 @@ class PreShin_UI(QWidget):
 
                     else:
                         result += ws.cell(row=row, column=2).value
+                        result_outlier += ws.cell(row=row, column=3).value
                         num += 1
 
                 ws[f'B{group_row}'] = result / num  # Group 평균 삽입
+                ws[f'C{group_row}'] = result_outlier / num
 
             group_row += len(group_value[i]) + 1
             landmark_row += len(group_value[i]) + 1
 
-        for row in range(4, ws.max_row+1):  # 결측치 제외 특정 수치 이상 빨강색
-            data = ws.cell(row=row, column=2).value
+        for row in range(4, ws.max_row + 1):  # 결측치 제외 특정 수치 이상 빨강색
+            for b in range(2):
+                data = ws.cell(row=row, column=2 + b).value
 
-            if data == 'None' or data == ' ':  # None, ' ' 은 str 이라 제외
-                pass
+                if data == 'None' or data == ' ':  # None, ' ' 은 str 이라 제외
+                    pass
 
-            elif float(data) > float(self.edt_error.text()):
-                ws.cell(row=row, column=2).fill = self.red_color
-                ws.cell(row=row, column=2).border = self.thin_border
+                elif float(data) > float(self.edt_error.text()):
+                    if float(data) > float(self.edt_outlier.text()):
+                        ws.cell(row=row, column=2 + b).fill = self.outlier_color
+                        ws.cell(row=row, column=2 + b).font = Font(bold=True, color='FFFFFF')
+                        ws.cell(row=row, column=2 + b).border = self.thin_border
+                    else:
+                        ws.cell(row=row, column=2 + b).fill = self.red_color
+                        ws.cell(row=row, column=2 + b).border = self.thin_border
 
         group_land_row = 5
         count = 0
@@ -802,7 +846,8 @@ class PreShin_UI(QWidget):
             count += len(group_value[h]) + 2
 
         ws.column_dimensions['A'].width = 23
-        ws.column_dimensions['B'].width = 15
+        ws.column_dimensions['B'].width = 13
+        ws.column_dimensions['C'].width = 13
 
         # 색상 정보
         ws['F3'].fill = self.orange_color
@@ -821,7 +866,7 @@ class PreShin_UI(QWidget):
 
         wb.save(filename=xlsx)
         # 그래프가 없는 시트2 불러옴 시트에서 평균값을 만들어서 다시 불러와야함
-        df = pd.read_excel(xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1])
+        df = pd.read_excel(xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1, 2])
         df = df.replace(to_replace=' ', value=-0.0001)  # ' '결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
         df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
         df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
@@ -862,8 +907,10 @@ class PreShin_UI(QWidget):
         # total_aver 이름, 측정값 추가
         group_total_name = []
         group_total_value = []
+        group_total_value_outlier = []
         group_total_name.append(graph_value[0][0])
         group_total_value.append(graph_value[1][0])
+        group_total_value_outlier.append(graph_value[2][0])
 
         # 그룹 개수 만큼 그래프 생성
         for j in range(len(group_list)):
@@ -871,29 +918,31 @@ class PreShin_UI(QWidget):
             # Total_aver, group 으로 묶음
             group_total_name.append(graph_value[0][1 + start_row])
             group_total_value.append(graph_value[1][1 + start_row])
+            group_total_value_outlier.append(graph_value[2][1 + start_row])
 
             # group, group 의 landmark 로 묶음
             group_name = graph_value[0][1 + start_row: 1 + group_list[j] + start_row]
             group_value = graph_value[1][1 + start_row: 1 + group_list[j] + start_row]
+            group_value_outlier = graph_value[2][1 + start_row: 1 + group_list[j] + start_row]
 
             # group 만 묶기 위해 group landmark 개수를 더해서 group 의 시작 위치로 감
             start_row += group_list[j]
 
-            self.vertical_graph(group_name, group_value, location)  # group, landmark 그래프 제작
+            self.vertical_graph(group_name, group_value, group_value_outlier, location)  # group, landmark 그래프 제작
 
             img = Image(location + f'/{group_name[0]}.png')  # 파일 저장
             img.width = 800  # 픽셀 단위 사이즈 변경
             img.height = 225
-            ws.add_image(img, f'D{image_insert}')
+            ws.add_image(img, f'E{image_insert}')
             image_insert += group_list[j] + 2  # 2칸씩 띄워서 삽입
 
         # total 이랑 group graph
-        self.horizon_graph(group_total_value, group_total_name, location)
+        self.horizon_graph(group_total_value, group_total_value_outlier, group_total_name, location)
 
         img = Image(location + f'/{group_total_name[0]}.png')  # 파일 불러옴
         img.width = 650  # 픽셀 단위 사이즈 변경
         img.height = 1000
-        ws.add_image(img, 'O3')
+        ws.add_image(img, 'P3')
 
         wb.save(filename=xlsx)
         logger.info('graph end')
@@ -901,7 +950,7 @@ class PreShin_UI(QWidget):
         # 소수점 3자리
 
     # 세로 graph 제작
-    def vertical_graph(self, x: list, y: list, location: str):
+    def vertical_graph(self, x: list, y: list, y_out: list, location: str):
 
         plt.figure(figsize=(13, 3))  # graph 사이즈
         plt.ylim([-3, 15])  # 범위
@@ -913,39 +962,65 @@ class PreShin_UI(QWidget):
         if y[0] > float(self.edt_error.text()):
             colors = ['#FFCCCC']
         else:
-            colors = ['#C1F0C1']
+            colors = ['#C1F0C1']  # 초록 #C1F0C1
 
-        # 일정 수치 이상 색 변환
+            # 일정 수치 이상 색 변환
         for j in range(len(x) - 1):
             if float(y[j + 1]) >= float(self.edt_error.text()):
                 colors.append('#FFCCCC')  # error 빨강
             else:
-                colors.append('#FFFFB3')  # 기본 노랑
+                colors.append('#FFFFB3')  # 기본 노랑 #FFFFB3
+
+        if y_out[0] > float(self.edt_error.text()):
+            colors_out = ['#FFCCCC']  # 파랑 #FFCCCC
+        else:
+            colors_out = ['#C1F0C1']  # 노랑 #b3d9ff
+
+        for f in range(len(x) - 1):
+            if y_out[f + 1] > float(self.edt_error.text()):
+                colors_out.append('#FFCCCC')  # error 빨강
+            else:
+                colors_out.append('#FFFFB3')  # group 초록 #C1F0C1
+
+
 
         # colors 리스트 삽입
         sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=x, y=y, edgecolor='black')  # edge color 테두리
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5,palette=colors)  # edge color 테두리 투명도
+        bar2 = sns.barplot(x=x, y=y_out, edgecolor='black', alpha=1, palette=colors_out)
+
         bar.set(title=x[0])
 
-        # 바에 내용 추가
-        for p in bar.patches:
+        # bar 아래 글씨
+        count = 0
+        for p in bar.patches:  # 바에 내용 추가
             height = p.get_height()
+            if count < len(bar.patches) / 2:
+                if height == -0.0001:
+                    bar.text(p.get_x() + p.get_width() / 2, -2, 'N/A', ha='center', size=10, color='red')
 
-            if height == -0.0001:  # 결측치 일때
-                bar.text(p.get_x() + p.get_width() / 2., -2, 'N/A', ha='center', size=10, color='r')
+                elif height == -0.0002:
+                    bar.text(p.get_x() + p.get_width() / 2, -2, 'Empty', ha='center', size=10, color='orange')
 
-            elif height == -0.0002:  # group 에 값이 없을 때
-                bar.text(p.get_x() + p.get_width() / 2., -2, 'None', ha='center', size=10, color='orange')
+                else:
+                    bar.text(p.get_x() + p.get_width() / 2, -1.1, height, ha='center', size=10)
+            elif count >= len(bar.patches) / 2:
+                if height == -0.0001:
+                    bar.text(p.get_x() + p.get_width() / 2, -2, 'N/A', ha='center', size=10, color='red')
 
-            else:
-                bar.text(p.get_x() + p.get_width() / 2., -2, height, ha='center', size=10)
+                elif height == -0.0002:
+                    bar.text(p.get_x() + p.get_width() / 2., -2, 'Empty', ha='center', size=10, color='orange')
 
+                else:
+                    bar.text(p.get_x() + p.get_width() / 2, -2.4, f'({height})', ha='center', size=10)
+            count += 1
+        # 바에 내용 추가
         plt.savefig(location + f'/{x[0]}.png')  # save 랑 show 의 위치가 바뀌면 save 는 실행되지 않는다
         # plt.show() 바로 볼수 있음
         plt.close()
 
     #  가로 graph
-    def horizon_graph(self, x: list, y: list, location: str):
+    def horizon_graph(self, x: list, x_out: list, y: list, location: str):
         plt.figure(figsize=(12, 20))
         plt.xlim([-3, 15])  # 범위
         plt.axvline(x=0, color='black', linestyle='--')  # vertical
@@ -955,9 +1030,9 @@ class PreShin_UI(QWidget):
 
         # 처음 색상 결정
         if x[0] > float(self.edt_error.text()):
-            colors = ['#FFCCCC']
+            colors = ['#FFCCCC']  # 파랑 #FFCCCC
         else:
-            colors = ['#b3d9ff']
+            colors = ['#b3d9ff']  # 노랑 #b3d9ff
 
         for j in range(len(y) - 1):
 
@@ -965,22 +1040,55 @@ class PreShin_UI(QWidget):
                 colors.append('#FFCCCC')  # error 빨강
 
             else:
-                colors.append('#C1F0C1')  # group 초록
+                colors.append('#C1F0C1')  # group 초록 #C1F0C1
 
-        sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=x, y=y, edgecolor='black')
-        bar.set(title=y[0])
-        for p in bar.patches:  # 바에 내용 추가
-            width = p.get_width()
+        if x_out[0] > float(self.edt_error.text()):
+            colors_out = ['#FFCCCC']  # 파랑 #FFCCCC
+        else:
+            colors_out = ['#b3d9ff']  # 노랑 #b3d9ff
 
-            if width == -0.0001:
-                bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+        for m in range(len(y) - 1):
 
-            elif width == -0.0002:
-                bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+            if x_out[m + 1] > float(self.edt_error.text()):
+                colors_out.append('#FFCCCC')  # error 빨강
 
             else:
-                bar.text(-2, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
+                colors_out.append('#C1F0C1')  # group 초록 #C1F0C1
+
+        # sns.set_palette(sns.color_palette([colors))
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5, palette=colors)
+        bar2 = sns.barplot(x=x_out, y=y, edgecolor='black', alpha=1, palette=colors_out)
+        # https://zephyrus1111.tistory.com/17
+        bar.set(title=y[0])
+        count = 0
+        for p in bar.patches:  # 바에 내용 추가
+            width = p.get_width()
+            if count < len(bar.patches) / 2:
+                if width == -0.0001:
+                    bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+
+                elif width == -0.0002:
+                    bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+
+                else:
+                    bar.text(-0.8, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
+            elif count >= len(bar.patches) / 2:
+                if width == -0.0001:
+                    bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+
+                elif width == -0.0002:
+                    bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+
+                else:
+                    bar.text(-2.2, p.get_y() + p.get_height() / 2, f'({width})', ha='center', size=12)
+            count += 1
 
         plt.savefig(location + f'/{y[0]}.png')  # save, show 의 위치가 바뀌면 save 는 실행되지 않는다, 파일 저장
         plt.close()
+
+    def sheet3_setting(self, xlsx: str):
+        wb = openpyxl.load_workbook(filename=xlsx)
+        ws = wb['Sheet2']
+        sheet3 = wb.copy_worksheet(ws)
+        sheet3.title = 'sheet3'
+        wb.save(filename=xlsx)

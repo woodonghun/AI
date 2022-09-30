@@ -131,6 +131,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                             patient_id = name[0].split('.')[0]
 
                             df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
+
                         # outlier 의 수치 이하의 값만 출력 후 평균값 만들어서 landmark 와 합침
                         df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
                         aver_outlier = average(df_sheet_outlier)
@@ -142,28 +143,74 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         df_sheet['Aver'] = df_sheet.mean(axis=1)  # 마지막 열에 평균 추가
                         df_result = pd.concat([df_landmark, df_sheet], axis=1)  # 랜드마크, value 데이터 프레임 합치기
 
+                        # self.group_num : json 에서 받은 data 의 그룹별 landmark list 1[N]형태
+                        # sum 으로 하나의 list 로 만듬
                         group = sum(self.group_num, [])
                         self.number = [int(i.split('[')[0]) for i in group]
                         self.number.append('')
 
+                        # json 에 있는 그룹 landmark 만 출력 하기 위해서 query 사용
+                        # query 는 비교 연산자와 비슷하게 사용 즉 조건에 부합 하는 data 만 출력
                         df_result = df_result.query(f'Landmark_num == {self.number}')
                         df_result_outlier = df_result_outlier.query(f'Landmark_num == {self.number}')
 
-                        # 측정값과 num,name 나누어서 다시 평균 만들기 현재 평균은 group을 제거한 값도 같이 평균한 값임
+                        # 기본값 세팅
+                        # 측정값과 num,name 나누어 다시 평균 만들기 현재 평균은 group 을 제거한 값도 같이 평균한 값임
                         df_result1 = df_result.iloc[:, 0:2]
                         df_result2 = df_result.iloc[:, 2: len(df_result.columns)]
                         df_result2.drop(df_result2.tail(1).index)
                         df_result2.loc[df_lbl.shape[0]] = df_result2.mean(axis=0)
 
                         # outlier 세팅
+                        # result1은 기본값과 같이 사용할 수 있음
                         df_result2_outlier = df_result_outlier.iloc[:, 2: len(df_result_outlier.columns)]
                         df_result2_outlier.drop(df_result_outlier.tail(1).index)
                         df_result2_outlier.loc[df_lbl.shape[0]] = df_result2_outlier.mean(axis=0)
 
                         # 기본
-                        self.df_result = pd.concat([df_result1, df_result2], axis=1)
-                        self.df_result = self.df_result.fillna(-99999)  # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문
-                        self.df_result.iat[-1, -1] = aver  # 마지막 행,열에 전체 aver 추가
+                        # 결측치에 -99999 입력 -> 엑셀에서 색상 변경시 숫자일 때만 가능 하기 때문, 마지막 행,열에 전체 aver 추가
+                        # index 정렬
+                        df_result_concat = pd.concat([df_result1, df_result2], axis=1)
+                        df_result_concat.iat[-1, -1] = aver
+
+                        # 기본 표준 편차 설정
+                        df_copy = df_result_concat.copy()
+                        df_copy2 = df_copy.iloc[:-1, 2:-1]
+                        df_std_row = pd.DataFrame(df_copy2.std(axis=1))
+                        df_std_row.columns = ['std']
+                        df_std_column = pd.DataFrame(df_copy2.std())
+                        df_std_column = df_std_column.transpose()
+                        df_std_column['Landmark_name'] = ['std']
+                        df_std_column['Landmark_num'] = ['']
+                        df_std_column.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
+                        df_result_std = pd.concat([df_result_concat, df_std_column])
+                        df_result_std = pd.concat([df_result_std, df_std_row], axis=1)
+
+                        # outlier 세팅
+                        df_result_outlier_concat = pd.concat([df_result1, df_result2_outlier], axis=1)
+                        df_result_outlier_concat.iat[-1, -1] = aver_outlier
+
+                        # outlier 표준 편차 설정
+                        df_copy_outlier = df_result_outlier_concat.copy()
+                        df_copy2_outlier = df_copy_outlier.iloc[:-1, 2:-1]
+                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1))
+                        df_std_row_outlier.columns = ['std']
+                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std())
+                        df_std_column_outlier = df_std_column_outlier.transpose()
+                        df_std_column_outlier['Landmark_name'] = ['std']
+                        df_std_column_outlier['Landmark_num'] = ['']
+                        df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
+                        df_result_std_outlier = pd.concat([df_result_outlier_concat, df_std_column_outlier])
+                        df_result_std_outlier = pd.concat([df_result_std_outlier, df_std_row_outlier], axis=1)
+
+                        aver_std = "Landmark_name == ['Aver','std']"
+                        df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
+                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['outlier_Aver', 'outlier_std'])
+                        df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
+                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'outlier_Aver', 'std': 'outlier_std'})
+                        df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
+                        df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
+                        self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')
 
                         # 엑셀
@@ -171,26 +218,11 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.df_result.to_excel(writer, startcol=0, startrow=3,
                                                 index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
 
-                        # outlier 세팅
-                        self.df_result_outlier = pd.concat([df_result1, df_result2_outlier], axis=1)
-                        self.df_result_outlier = self.df_result_outlier.fillna(-99999)
-                        self.df_result_outlier.iat[-1, -1] = aver_outlier
-                        self.df_result_outlier.reset_index(inplace=True, drop='index')
-
-                        # outlier 엑셀
-                        writer_outlier = pd.ExcelWriter(self.new_xlsx_outlier, engine='openpyxl')
-                        self.df_result_outlier.to_excel(writer_outlier, startcol=0, startrow=3,
-                                                        index=False, sheet_name='Sheet1')  # 0,3부터 엑셀로 저장, 인덱스 제거, Sheet1에 저장
-
                         # 시트 2
 
-                        self.sheet2(self.df_result, writer, aver)
-                        self.sheet2(self.df_result_outlier, writer_outlier, aver_outlier)
-
-                        self.sheet1_setting(self.new_xlsx, 'off')
-                        self.sheet1_setting(self.new_xlsx_outlier, 'on')
-                        self.sheet2_setting(self.new_xlsx, 'off')
-                        self.sheet2_setting(self.new_xlsx_outlier, 'on')
+                        self.sheet2(self.df_result, writer, aver, aver_outlier)
+                        self.sheet1_setting(self.new_xlsx)
+                        self.sheet2_setting(self.new_xlsx)
                         ############
                         self.error_id()
                         messagebox('notice', 'Excel 생성이 완료 되었습니다.')
