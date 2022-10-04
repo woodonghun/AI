@@ -1092,7 +1092,7 @@ class PreShin_UI(QWidget):
         # sns.set_palette(sns.color_palette([colors))
         bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5, palette=colors)
         bar2 = sns.barplot(x=x_out, y=y, edgecolor='black', alpha=1, palette=colors_out)
-        # https://zephyrus1111.tistory.com/17
+
         bar.set(title=y[0])
         count = 0
         for p in bar.patches:  # 바에 내용 추가
