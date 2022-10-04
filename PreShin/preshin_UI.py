@@ -1,6 +1,7 @@
 import ast
 import os
-from typing import List, Optional
+from math import sqrt
+from typing import List, Optional, Tuple
 
 from PySide2.QtCore import Qt
 from matplotlib import pyplot as plt
@@ -46,6 +47,8 @@ class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.std_outlier = float
+        self.std = float
         self.lbl_id = Optional[str]
         self.lbl_list = List[str]
         self.pre_list = List[str]
@@ -512,15 +515,17 @@ class PreShin_UI(QWidget):
                         # 기본 표준 편차 설정
                         df_copy = df_result_concat.copy()
                         df_copy2 = df_copy.iloc[:-1, 2:-1]
-                        df_std_row = pd.DataFrame(df_copy2.std(axis=1))
+                        df_std_row = pd.DataFrame(df_copy2.std(axis=1, ddof=0))
                         df_std_row.columns = ['std']
-                        df_std_column = pd.DataFrame(df_copy2.std())
+                        df_std_column = pd.DataFrame(df_copy2.std(ddof=0))  # pandas는 표준표준편차를 기준으로함, 모 표준편차로 변경
                         df_std_column = df_std_column.transpose()
                         df_std_column['Landmark_name'] = ['std']
                         df_std_column['Landmark_num'] = ['']
                         df_std_column.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
                         df_result_std = pd.concat([df_result_concat, df_std_column])
                         df_result_std = pd.concat([df_result_std, df_std_row], axis=1)
+
+                        self.std = df_result_std['std'].std(ddof=0)
 
                         # outlier 세팅
                         df_result_outlier_concat = pd.concat([df_result1, df_result2_outlier], axis=1)
@@ -529,15 +534,17 @@ class PreShin_UI(QWidget):
                         # outlier 표준 편차 설정
                         df_copy_outlier = df_result_outlier_concat.copy()
                         df_copy2_outlier = df_copy_outlier.iloc[:-1, 2:-1]
-                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1))
+                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1, ddof=0))
                         df_std_row_outlier.columns = ['std']
-                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std())
+                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std(ddof=0))
                         df_std_column_outlier = df_std_column_outlier.transpose()
                         df_std_column_outlier['Landmark_name'] = ['std']
                         df_std_column_outlier['Landmark_num'] = ['']
                         df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
                         df_result_std_outlier = pd.concat([df_result_outlier_concat, df_std_column_outlier])
                         df_result_std_outlier = pd.concat([df_result_std_outlier, df_std_row_outlier], axis=1)
+
+                        self.std_outlier = df_result_std_outlier['std'].std(ddof=0)
 
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
@@ -726,13 +733,15 @@ class PreShin_UI(QWidget):
         df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df[
             'Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
         df_sheet2_name_aver['Aver'] = df['Aver']
+        df_sheet2_name_aver['std'] = df['std']
         df_sheet2_name_aver['outlier_Aver'] = df['outlier_Aver']
+        df_sheet2_name_aver['outlier_std'] = df['outlier_std']
         df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
         df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name', how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
 
         df_sheet2.to_excel(writer, startcol=0, startrow=3,
                            index=False, sheet_name='Sheet2')
-        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr], 'outlier_Aver': [outlier_aver]})
+        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr], 'std': [self.std], 'outlier_Aver': [outlier_aver], 'outlier_std': [self.std_outlier]})
         df_sheet2 = pd.concat([new_df, df_sheet2])
         df_sheet2 = df_sheet2.fillna('None')
         df_sheet2.to_excel(writer, startcol=0, startrow=2,
@@ -751,23 +760,23 @@ class PreShin_UI(QWidget):
         ws = wb['Sheet2']
 
         # table 에 default 값 출력
-        ws.cell(row=1, column=3).value = f'Error Safe Zone : {self.edt_error.text()}{self.lbl_mm.text()}'
+        ws.cell(row=1, column=2).value = f'Error Safe Zone : {self.edt_error.text()}{self.lbl_mm.text()}'
         ws.cell(row=1, column=6).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
         ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
 
-        ws.cell(row=1, column=3).font = Font(bold=True)
+        ws.cell(row=1, column=2).font = Font(bold=True)
         ws.cell(row=1, column=6).font = Font(bold=True)
         ws.cell(row=2, column=6).font = Font(bold=True)
 
-        ws.cell(row=2, column=3).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
-        ws.cell(row=2, column=3).font = Font(bold=True)
+        ws.cell(row=2, column=2).value = f'outlier : {self.edt_outlier.text()}{self.lbl_outlier_unit.text()}'
+        ws.cell(row=2, column=2).font = Font(bold=True)
 
         # num[landmark_name],aver 의 색상
         for row in range(5, ws.max_row + 1):
-            for a in range(2):
+            for a in range(4):
                 data = ws.cell(row=row, column=2 + a).value
 
                 if data == -99999:
@@ -783,7 +792,7 @@ class PreShin_UI(QWidget):
             ws.cell(row=row, column=1).border = self.thin_border
 
         # Total_aver, aver 색상
-        for e in range(3):
+        for e in range(5):
             ws.cell(row=4, column=1 + e).fill = self.blue_color
             ws.cell(row=4, column=1 + e).border = self.thin_border
 
@@ -793,7 +802,7 @@ class PreShin_UI(QWidget):
         # group 색상 초록색
         for i in range(len(group_key)):
             # Group 색상
-            for h in range(3):
+            for h in range(5):
                 ws.cell(row=group_row, column=1 + h).fill = self.green_color
                 ws.cell(row=group_row, column=1 + h).border = self.thin_border
                 ws.cell(row=group_row, column=1 + h).font = Font(bold=True)
@@ -801,28 +810,53 @@ class PreShin_UI(QWidget):
             # Group 평균
             for j in range(len(group_value)):
                 num = 0
-                result = 0
+                num_outlier = 0
+                result = 0  # 합
                 result_outlier = 0
+                dispersion = 0  # 분산
+                dispersion_outlier = 0  # 분산
                 # None, ' ' 을 제외한 합
                 for row in range(landmark_row, landmark_row + len(group_value[i])):
                     data = ws.cell(row=row, column=2).value
+                    data_out = ws.cell(row=row, column=4).value
 
                     if data == 'None' or data == ' ':
                         pass
 
                     else:
                         result += ws.cell(row=row, column=2).value
-                        result_outlier += ws.cell(row=row, column=3).value
+                        if data_out == 'None' or data_out == ' ':
+                            pass
+                        else:
+                            result_outlier += ws.cell(row=row, column=4).value
+                            num_outlier += 1
                         num += 1
 
-                ws[f'B{group_row}'] = result / num  # Group 평균 삽입
-                ws[f'C{group_row}'] = result_outlier / num
+                aver = result / num
+                outlier_aver = result_outlier / num_outlier
+
+                for dis in range(landmark_row, landmark_row + len(group_value[i])):
+                    std_data = ws.cell(row=dis, column=2).value
+                    std_data_out = ws.cell(row=dis, column=4).value
+                    if std_data == 'None' or std_data == ' ':
+                        pass
+                    else:
+                        if std_data_out == 'None' or std_data_out == ' ':
+                            pass
+                        else:
+                            dispersion_outlier += ((ws.cell(row=dis, column=4).value - outlier_aver) ** 2) / num_outlier
+                        dispersion += ((ws.cell(row=dis, column=2).value - aver) ** 2) / num
+
+                ws[f'B{group_row}'] = aver  # Group 평균 삽입
+                ws[f'D{group_row}'] = outlier_aver
+                ws[f'C{group_row}'] = sqrt(dispersion)
+                ws[f'E{group_row}'] = sqrt(dispersion_outlier)
 
             group_row += len(group_value[i]) + 1
             landmark_row += len(group_value[i]) + 1
 
         for row in range(4, ws.max_row + 1):  # 결측치 제외 특정 수치 이상 빨강색
-            for b in range(2):
+            for b in range(4):
                 data = ws.cell(row=row, column=2 + b).value
 
                 if data == 'None' or data == ' ':  # None, ' ' 은 str 이라 제외
@@ -848,6 +882,8 @@ class PreShin_UI(QWidget):
         ws.column_dimensions['A'].width = 23
         ws.column_dimensions['B'].width = 13
         ws.column_dimensions['C'].width = 13
+        ws.column_dimensions['D'].width = 13
+        ws.column_dimensions['E'].width = 13
 
         # 색상 정보
         ws['F3'].fill = self.orange_color
@@ -866,7 +902,7 @@ class PreShin_UI(QWidget):
 
         wb.save(filename=xlsx)
         # 그래프가 없는 시트2 불러옴 시트에서 평균값을 만들어서 다시 불러와야함
-        df = pd.read_excel(xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1, 2])
+        df = pd.read_excel(xlsx, sheet_name='Sheet2', header=2, usecols=[0, 1, 2, 3, 4])
         df = df.replace(to_replace=' ', value=-0.0001)  # ' '결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
         df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
         df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
@@ -910,7 +946,7 @@ class PreShin_UI(QWidget):
         group_total_value_outlier = []
         group_total_name.append(graph_value[0][0])
         group_total_value.append(graph_value[1][0])
-        group_total_value_outlier.append(graph_value[2][0])
+        group_total_value_outlier.append(graph_value[3][0])
 
         # 그룹 개수 만큼 그래프 생성
         for j in range(len(group_list)):
@@ -918,12 +954,12 @@ class PreShin_UI(QWidget):
             # Total_aver, group 으로 묶음
             group_total_name.append(graph_value[0][1 + start_row])
             group_total_value.append(graph_value[1][1 + start_row])
-            group_total_value_outlier.append(graph_value[2][1 + start_row])
+            group_total_value_outlier.append(graph_value[3][1 + start_row])
 
             # group, group 의 landmark 로 묶음
             group_name = graph_value[0][1 + start_row: 1 + group_list[j] + start_row]
             group_value = graph_value[1][1 + start_row: 1 + group_list[j] + start_row]
-            group_value_outlier = graph_value[2][1 + start_row: 1 + group_list[j] + start_row]
+            group_value_outlier = graph_value[3][1 + start_row: 1 + group_list[j] + start_row]
 
             # group 만 묶기 위해 group landmark 개수를 더해서 group 의 시작 위치로 감
             start_row += group_list[j]
@@ -933,7 +969,7 @@ class PreShin_UI(QWidget):
             img = Image(location + f'/{group_name[0]}.png')  # 파일 저장
             img.width = 800  # 픽셀 단위 사이즈 변경
             img.height = 225
-            ws.add_image(img, f'E{image_insert}')
+            ws.add_image(img, f'F{image_insert}')
             image_insert += group_list[j] + 2  # 2칸씩 띄워서 삽입
 
         # total 이랑 group graph
@@ -942,7 +978,7 @@ class PreShin_UI(QWidget):
         img = Image(location + f'/{group_total_name[0]}.png')  # 파일 불러옴
         img.width = 650  # 픽셀 단위 사이즈 변경
         img.height = 1000
-        ws.add_image(img, 'P3')
+        ws.add_image(img, 'Q3')
 
         wb.save(filename=xlsx)
         logger.info('graph end')
@@ -954,7 +990,7 @@ class PreShin_UI(QWidget):
 
         plt.figure(figsize=(13, 3))  # graph 사이즈
         plt.ylim([-3, 15])  # 범위
-        plt.axhline(y=0, color='black', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
+        plt.axhline(y=0, color='black')  # horizon y=0을 기준점 검정색 선을 그음
         plt.axhline(y=float(self.edt_error.text()), color='red', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
         plt.xticks(fontsize=8, rotation=-5)
 
@@ -982,11 +1018,9 @@ class PreShin_UI(QWidget):
             else:
                 colors_out.append('#FFFFB3')  # group 초록 #C1F0C1
 
-
-
         # colors 리스트 삽입
         sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5,palette=colors)  # edge color 테두리 투명도
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5, palette=colors)  # edge color 테두리 투명도
         bar2 = sns.barplot(x=x, y=y_out, edgecolor='black', alpha=1, palette=colors_out)
 
         bar.set(title=x[0])
@@ -1023,7 +1057,7 @@ class PreShin_UI(QWidget):
     def horizon_graph(self, x: list, x_out: list, y: list, location: str):
         plt.figure(figsize=(12, 20))
         plt.xlim([-3, 15])  # 범위
-        plt.axvline(x=0, color='black', linestyle='--')  # vertical
+        plt.axvline(x=0, color='black')  # vertical
         plt.axvline(x=float(self.edt_error.text()), color='red', linestyle='--')  # vertical
         plt.yticks(fontsize=12)
         plt.xticks(fontsize=12)
@@ -1090,5 +1124,204 @@ class PreShin_UI(QWidget):
         wb = openpyxl.load_workbook(filename=xlsx)
         ws = wb['Sheet2']
         sheet3 = wb.copy_worksheet(ws)
-        sheet3.title = 'sheet3'
+        sheet3.title = 'Sheet3'
+        ws.delete_cols(5)
+        ws.delete_cols(3)
         wb.save(filename=xlsx)
+
+        df = pd.read_excel(xlsx, sheet_name='Sheet3', header=2, usecols=[0, 1, 2, 3, 4])
+        df = df.replace(to_replace=' ', value=-0.0001)  # ' '결측치 -> -0.0001    오차값은 음수가 없어서 음수값으로 결측치와 존재하지 않은것을 확인한다
+        df = df.replace(to_replace='None', value=-0.0002)  # 아에 없는거 -> -0.0002
+        df = df.dropna(axis=0)  # 줄 띄워서 생긴 결측치 제거
+        df = round(df, 4)  # 소수 자리수
+        self.std_graph(df, xlsx)
+
+    def std_graph(self, df: pd.DataFrame, xlsx: str):
+        logger.info('graph start')
+        # 이미지 폴더 이름, 생성
+        loc = xlsx.split('.')
+        loc = loc[0].split('/')
+        location_outlier = self.loc_xlsx + f'/outlier_std_{loc[-1]}_image'
+        location = self.loc_xlsx + f'/std_{loc[-1]}_image'
+        os.mkdir(location)
+        os.mkdir(location_outlier)
+
+        group = self.open_json()
+
+        key = list(group.keys())
+        value = list(group.values())
+        group_list = []
+
+        # 그룹별 landmark 개수 리스트
+        for i in range(len(key)):
+            group_list.append(1 + len(value[i]))
+
+        graph = df  # 시트2 데이터 프레임
+        graph_dict = graph.to_dict('list')
+        graph_value = list(graph_dict.values())
+
+        start_row = 0
+        image_insert = 7  # 이미지 삽입 시작 셀
+
+        # 이미지를 엑셀에 넣기 위함
+        wb = openpyxl.load_workbook(filename=xlsx)
+        ws = wb['Sheet3']
+
+        # total_aver 이름, 측정값 추가
+        group_total_name = []
+        group_total_value = []
+        group_total_std = []
+        group_total_value_outlier = []
+        group_total_std_outlier = []
+
+        group_total_name.append(graph_value[0][0])
+        group_total_value.append(graph_value[1][0])
+        group_total_std.append(graph_value[2][0])
+        group_total_value_outlier.append(graph_value[3][0])
+        group_total_std_outlier.append(graph_value[4][0])
+
+        # 그룹 개수 만큼 그래프 생성
+        for j in range(len(group_list)):
+            # group_value[0][0] - total_aver 이라 [1]부터 해야됨
+            # Total_aver, group 으로 묶음
+            group_total_name.append(graph_value[0][1 + start_row])
+            group_total_value.append(graph_value[1][1 + start_row])
+            group_total_std.append(graph_value[2][1 + start_row])
+            group_total_value_outlier.append(graph_value[3][1 + start_row])
+            group_total_std_outlier.append(graph_value[4][1 + start_row])
+
+            # group, group 의 landmark 로 묶음
+            group_name = graph_value[0][1 + start_row: 1 + group_list[j] + start_row]
+            group_value = graph_value[1][1 + start_row: 1 + group_list[j] + start_row]
+            group_std = graph_value[2][1 + start_row: 1 + group_list[j] + start_row]
+            group_value_outlier = graph_value[3][1 + start_row: 1 + group_list[j] + start_row]
+            group_std_outlier = graph_value[4][1 + start_row: 1 + group_list[j] + start_row]
+
+            # group 만 묶기 위해 group landmark 개수를 더해서 group 의 시작 위치로 감
+            start_row += group_list[j]
+
+            self.std_vertical_graph(group_name, group_value, location, group_std, '')  # group, landmark 그래프 제작
+
+            img = Image(location + f'/{group_name[0]}.png')  # 파일 저장
+            img.width = 800  # 픽셀 단위 사이즈 변경
+            img.height = 225
+            ws.add_image(img, f'F{image_insert}')
+
+            self.std_vertical_graph(group_name, group_value_outlier, location_outlier, group_std_outlier, 'outlier_')  # group, landmark 그래프 제작
+
+            img_std = Image(location_outlier + f'/outlier_{group_name[0]}.png')  # 파일 불러옴
+            img_std.width = 800  # 픽셀 단위 사이즈 변경
+            img_std.height = 225
+            ws.add_image(img_std, f'Q{image_insert}')
+
+            image_insert += group_list[j] + 2  # 2칸씩 띄워서 삽입
+
+        # total 이랑 group graph
+        self.std_horizon_graph(group_total_value, group_total_name, location, group_total_std, '')
+
+        img = Image(location + f'/{group_total_name[0]}.png')  # 파일 불러옴
+        img.width = 650  # 픽셀 단위 사이즈 변경
+        img.height = 1000
+        ws.add_image(img, 'AB3')
+
+        self.std_horizon_graph(group_total_value_outlier, group_total_name, location_outlier, group_total_std_outlier, 'outlier_')
+
+        img_std = Image(location_outlier + f'/outlier_{group_total_name[0]}.png')  # 파일 불러옴
+        img_std.width = 650  # 픽셀 단위 사이즈 변경
+        img_std.height = 1000
+        ws.add_image(img_std, 'AB49')
+
+        wb.save(filename=xlsx)
+        logger.info('graph end')
+        # 최대치 ----- 20 ~ 30
+        # 소수점 3자리
+
+    def std_vertical_graph(self, x: list, y: list, location: str, std: list, title: str):
+
+        plt.figure(figsize=(13, 3))  # graph 사이즈
+        plt.ylim([-3, 15])  # 범위
+        plt.axhline(y=0, color='black')
+        plt.axhline(y=float(self.edt_error.text()), color='red', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
+        plt.errorbar(x, y, yerr=std, color='black', ecolor='black', fmt='.', alpha=0.7)
+        plt.xticks(fontsize=8, rotation=-5)
+
+        # 처음 색상 결정
+        if y[0] > float(self.edt_error.text()):
+            colors = ['#FFCCCC']
+        else:
+            colors = ['#C1F0C1']  # 초록 #C1F0C1
+
+            # 일정 수치 이상 색 변환
+        for j in range(len(x) - 1):
+            if float(y[j + 1]) >= float(self.edt_error.text()):
+                colors.append('#FFCCCC')  # error 빨강
+            else:
+                colors.append('#FFFFB3')  # 기본 노랑 #FFFFB3
+
+        # colors 리스트 삽입
+        sns.set_palette(sns.color_palette(colors))
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linewidth=1.5, palette=colors)  # edge color 테두리 투명도
+
+        bar.set(title=f'{title}{x[0]}')
+
+        # bar 아래 글씨
+        count = 0
+        for p in bar.patches:  # 바에 내용 추가
+            height = p.get_height()
+
+            if height == -0.0001:
+                bar.text(p.get_x() + p.get_width() / 2, -2, 'N/A', ha='center', size=10, color='red')
+            elif height == -0.0002:
+                bar.text(p.get_x() + p.get_width() / 2, -2, 'Empty', ha='center', size=10, color='orange')
+            else:
+                bar.text(p.get_x() + p.get_width() / 2, -2, height, ha='center', size=10)
+
+            count += 1
+        # 바에 내용 추가
+        plt.savefig(location + f'/{title}{x[0]}.png')  # save 랑 show 의 위치가 바뀌면 save 는 실행되지 않는다
+        # plt.show() 바로 볼수 있음
+        plt.close()
+
+    def std_horizon_graph(self, x: list, y: list, location: str, std: list, title: str):
+        plt.figure(figsize=(12, 20))
+        plt.xlim([-3, 15])  # 범위
+        plt.axvline(x=0, color='black')
+        plt.axvline(x=float(self.edt_error.text()), color='red', linestyle='--')
+        plt.errorbar(x, y, xerr=std, color='black', ecolor='black', fmt='.', alpha=0.7)
+        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=12)
+
+        # 처음 색상 결정
+        if x[0] > float(self.edt_error.text()):
+            colors = ['#FFCCCC']  # 파랑 #FFCCCC
+        else:
+            colors = ['#b3d9ff']  # 노랑 #b3d9ff
+
+        for j in range(len(y) - 1):
+
+            if x[j + 1] > float(self.edt_error.text()):
+                colors.append('#FFCCCC')  # error 빨강
+
+            else:
+                colors.append('#C1F0C1')  # group 초록 #C1F0C1
+
+        # sns.set_palette(sns.color_palette([colors))
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linewidth=1.5, palette=colors)
+        # https://zephyrus1111.tistory.com/17
+        bar.set(title=f'{title}{y[0]}')
+        count = 0
+        for p in bar.patches:  # 바에 내용 추가
+            width = p.get_width()
+            if width == -0.0001:
+                bar.text(-2, p.get_y() + p.get_height() / 2, 'N/A', ha='center', size=10, color='red')
+
+            elif width == -0.0002:
+                bar.text(-2, p.get_y() + p.get_height() / 2, 'Empty', ha='center', size=10, color='orange')
+
+            else:
+                bar.text(-2, p.get_y() + p.get_height() / 2, width, ha='center', size=12)
+
+            count += 1
+
+        plt.savefig(location + f'/{title}{y[0]}.png')  # save, show 의 위치가 바뀌면 save 는 실행되지 않는다, 파일 저장
+        plt.close()
