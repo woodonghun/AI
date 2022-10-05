@@ -31,36 +31,6 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         label.close()
         return lines
 
-    def compare_landmark(self, lbl_id: str, lbl_list: list):
-        # label 폴더의 제일 처음 환자 id를 읽음
-        # landmark, x, y형태
-        lines_chunk = self.landmark_id_format_change(lbl_id, lbl_list[0])
-
-        # landmark 번호만 따로 저장
-        lines_chunk_num = []
-        for i in range(len(lines_chunk)):
-            lines_chunk_num.append(lines_chunk[i][0])
-
-        set_lines_chunk_num = set(lines_chunk_num)
-        set_landmark_value = set(self.landmark_value)
-        empty = set_lines_chunk_num - set_landmark_value
-        empty_list = list(empty)  # 집합을 만들어 차집합 으로 landmark.dat 에 없는 num 를 찾음
-
-        landmark_name = []  # 빈 리스트 생성
-
-        # landmark 저장
-        for i in range(len(lines_chunk)):
-            for j in range(len(self.landmark_value)):
-                if lines_chunk[i][0] == self.landmark_value[j]:  # 비교후 같은 값을 landmark_name 에 리스트로 추가
-                    landmark_name.append(self.landmark_key[j])  # landmark key : id, value : number
-                    continue
-                if j > len(self.landmark_value) - 2:
-                    for k in range(len(empty_list)):
-                        if empty_list[k] == lines_chunk[i][0]:  # 없는 num 와 비교후 같으면 empty 저장
-                            landmark_name.append('None')
-
-        return landmark_name
-
     def id_dataframe(self, lines_chunk: list):
         df = pd.DataFrame(lines_chunk, columns=['Landmark_num', 'x', 'y'])  # label 데이터 프레임
         df['x'] = df['x'].astype(float)  # 타입 변경 안하면 연산 안됨
@@ -77,6 +47,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         df.drop('y', axis=1, inplace=True)
 
     def btn_export_clicked(self):
+        logger.info('2d_btn_export_clicked')
         # lbl, pre 둘다 선택
         if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
 
@@ -176,15 +147,17 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         # 기본 표준 편차 설정
                         df_copy = df_result_concat.copy()
                         df_copy2 = df_copy.iloc[:-1, 2:-1]
-                        df_std_row = pd.DataFrame(df_copy2.std(axis=1))
+                        df_std_row = pd.DataFrame(df_copy2.std(axis=1, ddof=0))
                         df_std_row.columns = ['std']
-                        df_std_column = pd.DataFrame(df_copy2.std())
+                        df_std_column = pd.DataFrame(df_copy2.std(ddof=0))
                         df_std_column = df_std_column.transpose()
                         df_std_column['Landmark_name'] = ['std']
                         df_std_column['Landmark_num'] = ['']
                         df_std_column.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
                         df_result_std = pd.concat([df_result_concat, df_std_column])
                         df_result_std = pd.concat([df_result_std, df_std_row], axis=1)
+
+                        self.std = df_result_std['Aver'].head(-2).std(ddof=0)
 
                         # outlier 세팅
                         df_result_outlier_concat = pd.concat([df_result1, df_result2_outlier], axis=1)
@@ -193,15 +166,17 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         # outlier 표준 편차 설정
                         df_copy_outlier = df_result_outlier_concat.copy()
                         df_copy2_outlier = df_copy_outlier.iloc[:-1, 2:-1]
-                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1))
+                        df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1, ddof=0))
                         df_std_row_outlier.columns = ['std']
-                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std())
+                        df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std(ddof=0))
                         df_std_column_outlier = df_std_column_outlier.transpose()
                         df_std_column_outlier['Landmark_name'] = ['std']
                         df_std_column_outlier['Landmark_num'] = ['']
                         df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
                         df_result_std_outlier = pd.concat([df_result_outlier_concat, df_std_column_outlier])
                         df_result_std_outlier = pd.concat([df_result_std_outlier, df_std_row_outlier], axis=1)
+
+                        self.std_outlier = df_result_std_outlier['Aver'].head(-2).std(ddof=0)
 
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
@@ -210,6 +185,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'outlier_Aver', 'std': 'outlier_std'})
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
+
                         self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')
 
@@ -223,6 +199,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.sheet2(self.df_result, writer, aver, aver_outlier)
                         self.sheet1_setting(self.new_xlsx)
                         self.sheet2_setting(self.new_xlsx)
+                        self.sheet3_setting(self.new_xlsx)
                         ############
                         self.error_id()
                         messagebox('notice', 'Excel 생성이 완료 되었습니다.')
@@ -237,8 +214,9 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         # label, predict 선택 되지 않았을 때
         elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
+            logger.error("label, predict location error")
 
-        logger.info("btn_export out")
+        logger.info("2d_btn_export out")
 
     def open_json(self):
 
