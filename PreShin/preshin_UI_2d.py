@@ -49,7 +49,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def btn_export_clicked(self):
         logger.info('2d_btn_export_clicked')
         # lbl, pre 둘다 선택
-        if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
+        if self.edt_lbl.text() != '' and self.edt_pre.text() != '':
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
@@ -180,9 +180,9 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
 
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
-                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['outlier_Aver', 'outlier_std'])
+                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['Remove_outlier_Aver', 'Remove_outlier_std'])
                         df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
-                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'outlier_Aver', 'std': 'outlier_std'})
+                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_outlier_Aver', 'std': 'Remove_outlier_std'})
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
 
@@ -212,7 +212,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                 messagebox('Warning', "파일명을 입력하세요")
                 logger.error("no file name")
         # label, predict 선택 되지 않았을 때
-        elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
+        elif self.edt_lbl.text() == '' or self.edt_pre.text() == '':
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
             logger.error("label, predict location error")
 

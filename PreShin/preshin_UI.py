@@ -76,6 +76,7 @@ class PreShin_UI(QWidget):
         self.green_color = PatternFill(start_color='c1f0c1', end_color='c1f0c1', fill_type='solid')
         self.red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
         self.yellow_color = PatternFill(start_color='ffffb3', end_color='ffffb3', fill_type='solid')
+        self.yellow_color2 = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
         self.gray_color2 = PatternFill(start_color='e0e0eb', end_color='e0e0eb', fill_type='solid')
         self.gray_color = PatternFill(start_color='bfbfbf', end_color='bfbfbf', fill_type='solid')
         self.blue_color2 = PatternFill(start_color='ccf5ff', end_color='ccf5ff', fill_type='solid')
@@ -125,8 +126,8 @@ class PreShin_UI(QWidget):
         btn_export.setText('Export Excel')
         btn_manual.setText('Open Manual')
 
-        self.lbl_pre = QLabel(self.dialog)
-        self.lbl_lbl = QLabel(self.dialog)
+        self.edt_pre = QLineEdit(self.dialog)
+        self.edt_lbl = QLineEdit(self.dialog)
         lbl_unit = QLabel(self.dialog)
         lbl_error = QLabel(self.dialog)
         lbl_outlier = QLabel(self.dialog)
@@ -149,8 +150,8 @@ class PreShin_UI(QWidget):
         cb.currentTextChanged.connect(self.cb_unit_change)
 
         self.lbl_outlier_unit.setGeometry(270, 305, 100, 20)
-        self.lbl_lbl.setGeometry(125, 31, 250, 30)
-        self.lbl_pre.setGeometry(125, 56, 250, 30)
+        self.edt_lbl.setGeometry(130, 35, 190, 20)
+        self.edt_pre.setGeometry(130, 60, 190, 20)
         lbl_unit.setGeometry(220, 200, 100, 20)
         lbl_error.setGeometry(220, 230, 100, 20)
         lbl_outlier.setGeometry(220, 280, 100, 20)
@@ -217,10 +218,10 @@ class PreShin_UI(QWidget):
                     if ext != '.txt' or ext == '':
                         messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                         logger.error('label file format Error')
-                        self.lbl_lbl.setText('')
+                        self.edt_lbl.setText('')
                         break
 
-                    self.lbl_lbl.setText(str(self.lbl_id))
+                    self.edt_lbl.setText(str(self.lbl_id))
                     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
                     # export 에서 하면 안되서 미리 넣음
                     self.landmark_name = self.compare_landmark(self.lbl_id, self.lbl_list)
@@ -230,7 +231,7 @@ class PreShin_UI(QWidget):
                 logger.error('label file format Error')
 
         else:
-            self.lbl_lbl.setText('')
+            self.edt_lbl.setText('')
         logger.info('label_btn out')
 
     def btn_pre_clicked(self):
@@ -248,16 +249,16 @@ class PreShin_UI(QWidget):
                     if ext != '.txt' or ext == '':
                         messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                         logger.error('label file format Error')
-                        self.lbl_pre.setText('')
+                        self.edt_pre.setText('')
                         break
 
-                    self.lbl_pre.setText(str(self.pre_id))
+                    self.edt_pre.setText(str(self.pre_id))
             else:
                 messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                 logger.error('label file format Error')
 
         else:
-            self.lbl_pre.setText('')  # 껏을때 빈칸
+            self.edt_pre.setText('')  # 껏을때 빈칸
         logger.info('predict_btn out')
 
     # landmark.dat 구조 변경 후 number - key, name - value 로 지정
@@ -407,7 +408,7 @@ class PreShin_UI(QWidget):
     def btn_export_clicked(self):
         logger.info('btn_export_clicked')
         # lbl, pre 둘다 선택
-        if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
+        if self.edt_lbl.text() != '' and self.edt_pre.text() != '':
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
@@ -416,10 +417,10 @@ class PreShin_UI(QWidget):
                 if loc_xlsx != '':  # 폴더 선택 했을때
                     file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
 
-                    if f'{self.edt_xlsx_name.text()}_folder' not in file:  # 동일한 파일명이 없을때
+                    if fr'{self.edt_xlsx_name.text()}_folder' not in file:  # 동일한 파일명이 없을때
 
                         # 저장할 폴더 생성
-                        self.loc_xlsx = loc_xlsx + f'/{self.edt_xlsx_name.text()}_folder'
+                        self.loc_xlsx = loc_xlsx + fr'/{self.edt_xlsx_name.text()}_folder'
                         os.mkdir(self.loc_xlsx)
 
                         df_sheet = pd.DataFrame()
@@ -427,7 +428,7 @@ class PreShin_UI(QWidget):
 
                         # 엑셀 생성
                         wb = openpyxl.Workbook()
-                        self.new_xlsx = self.loc_xlsx + f'/{self.edt_xlsx_name.text()}.xlsx'
+                        self.new_xlsx = self.loc_xlsx + fr'/{self.edt_xlsx_name.text()}.xlsx'
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
@@ -540,7 +541,7 @@ class PreShin_UI(QWidget):
                         df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1, ddof=0))
                         df_std_row_outlier.columns = ['std']
                         df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std(ddof=0))
-                        df_std_column_outlier = df_std_column_outlier.transpose()
+                        df_std_column_outlier = df_std_column_outlier.transpose()    # 행 열 전환
                         df_std_column_outlier['Landmark_name'] = ['std']
                         df_std_column_outlier['Landmark_num'] = ['']
                         df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
@@ -553,12 +554,12 @@ class PreShin_UI(QWidget):
 
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
-                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['outlier_Aver', 'outlier_std'])
+                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['Remove_Outlier_Aver', 'Remove_Outlier_std'])
                         df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
-                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'outlier_Aver', 'std': 'outlier_std'})
+                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_Outlier_Aver', 'std': 'Remove_Outlier_std'})
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
-
+                        print(df_outlier_aver_std_column)
                         self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')
 
@@ -587,7 +588,7 @@ class PreShin_UI(QWidget):
                 logger.error("no file name")
 
         # label, predict 선택 되지 않았을 때
-        elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
+        elif self.edt_lbl.text() == '' or self.edt_pre.text() == '':
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
             logger.error("label, predict location error")
 
@@ -637,7 +638,7 @@ class PreShin_UI(QWidget):
                         ws.cell(row=row, column=col).font = Font(bold=True, color='FFFFFF')
                         ws.cell(row=row, column=col).border = self.thin_border
                     else:
-                        ws.cell(row=row, column=col).fill = self.red_color
+                        ws.cell(row=row, column=col).fill = self.yellow_color2
                         ws.cell(row=row, column=col).border = self.thin_border
 
                 elif data == -99999:
@@ -671,8 +672,8 @@ class PreShin_UI(QWidget):
         # 셀 너비 설정
         ws.column_dimensions['A'].width = 15
         ws.column_dimensions['B'].width = 20
-        ws.column_dimensions[get_column_letter(ws.max_column)].width = 15
-        ws.column_dimensions[get_column_letter(ws.max_column - 1)].width = 15
+        ws.column_dimensions[get_column_letter(ws.max_column)].width = 20
+        ws.column_dimensions[get_column_letter(ws.max_column - 1)].width = 20
 
         # comment 에 작성된 값 삽입
         ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
@@ -735,13 +736,13 @@ class PreShin_UI(QWidget):
         df_sheet2_name_aver['Name'] = df['Landmark_num'].astype(str) + '[' + df['Landmark_name'] + ']'  # 2[Sella] 형식으로 dataframe 만듬
         df_sheet2_name_aver['Aver'] = df['Aver']
         df_sheet2_name_aver['std'] = df['std']
-        df_sheet2_name_aver['outlier_Aver'] = df['outlier_Aver']
-        df_sheet2_name_aver['outlier_std'] = df['outlier_std']
+        df_sheet2_name_aver['Remove_Outlier_Aver'] = df['Remove_Outlier_Aver']
+        df_sheet2_name_aver['Remove_Outlier_std'] = df['Remove_Outlier_std']
         df_sheet2_name_aver = df_sheet2_name_aver.drop(df_sheet2_name_aver.index[len(df_sheet2_name_aver) - 1])  # 마지막 줄 제거
         df_sheet2 = self.df_sheet2_name.merge(df_sheet2_name_aver, on='Name', how='left')  # 2[Sella] aver 형태로 합침 # 빈 칸 Nan 으로 합쳐짐
 
         df_sheet2.to_excel(writer, startcol=0, startrow=3, index=False, sheet_name='Sheet2')
-        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr], 'std': [self.std], 'outlier_Aver': [outlier_aver], 'outlier_std': [self.std_outlier]})
+        new_df = pd.DataFrame({'Name': ['Total_aver'], 'Aver': [avr], 'std': [self.std], 'Remove_Outlier_Aver': [outlier_aver], 'Remove_Outlier_std': [self.std_outlier]})
         df_sheet2 = pd.concat([new_df, df_sheet2])
         df_sheet2 = df_sheet2.fillna('None')
         df_sheet2.to_excel(writer, startcol=0, startrow=2, index=False, sheet_name='Sheet2')
@@ -858,7 +859,7 @@ class PreShin_UI(QWidget):
                         ws.cell(row=row, column=2 + b).font = Font(bold=True, color='FFFFFF')
                         ws.cell(row=row, column=2 + b).border = self.thin_border
                     else:
-                        ws.cell(row=row, column=2 + b).fill = self.red_color
+                        ws.cell(row=row, column=2 + b).fill = self.yellow_color2
                         ws.cell(row=row, column=2 + b).border = self.thin_border
 
         group_land_row = 5
@@ -871,9 +872,9 @@ class PreShin_UI(QWidget):
 
         ws.column_dimensions['A'].width = 23
         ws.column_dimensions['B'].width = 13
-        ws.column_dimensions['C'].width = 13
-        ws.column_dimensions['D'].width = 13
-        ws.column_dimensions['E'].width = 13
+        ws.column_dimensions['C'].width = 20
+        ws.column_dimensions['D'].width = 20
+        ws.column_dimensions['E'].width = 20
 
         # 색상 정보
         ws['F3'].fill = self.orange_color
@@ -1133,7 +1134,7 @@ class PreShin_UI(QWidget):
         # 이미지 폴더 이름, 생성
         loc = xlsx.split('.')
         loc = loc[0].split('/')
-        location_outlier = self.loc_xlsx + f'/outlier_std_{loc[-1]}_image'
+        location_outlier = self.loc_xlsx + f'/Remove_Outlier_std_{loc[-1]}_image'
         location = self.loc_xlsx + f'/std_{loc[-1]}_image'
         os.mkdir(location)
         os.mkdir(location_outlier)
@@ -1201,9 +1202,9 @@ class PreShin_UI(QWidget):
             ws.add_image(img, f'F{image_insert}')
 
             group_std_outlier_arr = np.array(group_std_outlier)
-            self.std_vertical_graph(group_name, group_value_outlier, location_outlier, group_std_outlier_arr/2, 'std_outlier_')  # outlier group, landmark 그래프 제작
+            self.std_vertical_graph(group_name, group_value_outlier, location_outlier, group_std_outlier_arr/2, 'std_Remove_Outlier_')  # outlier group, landmark 그래프 제작
 
-            img_std = Image(location_outlier + f'/std_outlier_{group_name[0]}.png')  # 파일 불러옴
+            img_std = Image(location_outlier + f'/std_Remove_Outlier_{group_name[0]}.png')  # 파일 불러옴
             img_std.width = 800  # 픽셀 단위 사이즈 변경
             img_std.height = 225
             ws.add_image(img_std, f'Q{image_insert}')
@@ -1220,9 +1221,9 @@ class PreShin_UI(QWidget):
         ws.add_image(img, 'AB3')
 
         group_total_std_outlier_arr = np.array(group_total_std_outlier)
-        self.std_horizon_graph(group_total_value_outlier, group_total_name, location_outlier, group_total_std_outlier_arr/2, 'std_outlier_')    # outlier 그래프
+        self.std_horizon_graph(group_total_value_outlier, group_total_name, location_outlier, group_total_std_outlier_arr/2, 'std_Remove_Outlier_')    # outlier 그래프
 
-        img_std = Image(location_outlier + f'/std_outlier_{group_total_name[0]}.png')  # 파일 불러옴
+        img_std = Image(location_outlier + f'/std_Remove_Outlier_{group_total_name[0]}.png')  # 파일 불러옴
         img_std.width = 650  # 픽셀 단위 사이즈 변경
         img_std.height = 1000
         ws.add_image(img_std, 'AB49')

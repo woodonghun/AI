@@ -2,7 +2,8 @@ import logging
 from datetime import datetime
 from PreShin.config import CONFIG
 
-class logger():
+
+class logger:
     def logs(self):
         date_s = (datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))  # 파일 명에 사용 하기 위함
         logger = logging.getLogger()
