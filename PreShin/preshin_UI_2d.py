@@ -3,7 +3,7 @@ import os
 
 import openpyxl
 import pandas as pd
-from PySide2.QtWidgets import QFileDialog
+from PySide2.QtWidgets import QFileDialog, QComboBox, QLabel
 
 import PreShin.preshin_UI
 from PreShin.preshin_UI import average, messagebox
@@ -13,6 +13,15 @@ from PreShin.loggers import logger
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
         super().__init__()
+
+    def combobox(self):
+        cb = QComboBox(self.dialog)
+        cb.addItem('Pixel')
+        cb.addItem('mm')
+        self.lbl_outlier_unit = QLabel('Pixel', self.dialog)
+        self.lbl_mm = QLabel('Pixel', self.dialog)
+        cb.setGeometry(290, 200, 70, 20)
+        cb.currentTextChanged.connect(self.cb_unit_change)
 
     # [id, x, y] 형태 list 로 만듬
     def landmark_id_format_change(self, loc: str, id_list: str):
@@ -47,9 +56,10 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         df.drop('y', axis=1, inplace=True)
 
     def btn_export_clicked(self):
+        global df_lbl
         logger.info('2d_btn_export_clicked')
         # lbl, pre 둘다 선택
-        if self.edt_lbl.text() != '' and self.edt_pre.text() != '':
+        if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
@@ -149,6 +159,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         df_copy2 = df_copy.iloc[:-1, 2:-1]
                         df_std_row = pd.DataFrame(df_copy2.std(axis=1, ddof=0))
                         df_std_row.columns = ['std']
+                        # pandas 는 표준표준편차를 기준으로함, 모표준편차로 변경 (ddof=1 이 기본)
                         df_std_column = pd.DataFrame(df_copy2.std(ddof=0))
                         df_std_column = df_std_column.transpose()
                         df_std_column['Landmark_name'] = ['std']
@@ -169,20 +180,22 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         df_std_row_outlier = pd.DataFrame(df_copy2_outlier.std(axis=1, ddof=0))
                         df_std_row_outlier.columns = ['std']
                         df_std_column_outlier = pd.DataFrame(df_copy2_outlier.std(ddof=0))
-                        df_std_column_outlier = df_std_column_outlier.transpose()
+                        df_std_column_outlier = df_std_column_outlier.transpose()  # 행 열 전환
                         df_std_column_outlier['Landmark_name'] = ['std']
                         df_std_column_outlier['Landmark_num'] = ['']
                         df_std_column_outlier.index = [-1]  # index 0 이되면 다른 곳에 추가로 값이 들어감
+
+                        # 행열에 표준편차 합치기
                         df_result_std_outlier = pd.concat([df_result_outlier_concat, df_std_column_outlier])
                         df_result_std_outlier = pd.concat([df_result_std_outlier, df_std_row_outlier], axis=1)
 
-                        self.std_outlier = df_result_std_outlier['Aver'].head(-2).std(ddof=0)
+                        self.std_outlier = df_result_std_outlier['Aver'].head(-2).std(ddof=0)  # head(-2) Aver, std 제외한 표준편차
 
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
-                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['Remove_outlier_Aver', 'Remove_outlier_std'])
+                        df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['Remove_Outlier_Aver', 'Remove_Outlier_std'])
                         df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
-                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_outlier_Aver', 'std': 'Remove_outlier_std'})
+                        df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_Outlier_Aver', 'std': 'Remove_Outlier_std'})
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
 
@@ -212,7 +225,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                 messagebox('Warning', "파일명을 입력하세요")
                 logger.error("no file name")
         # label, predict 선택 되지 않았을 때
-        elif self.edt_lbl.text() == '' or self.edt_pre.text() == '':
+        elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
             logger.error("label, predict location error")
 

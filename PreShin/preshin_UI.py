@@ -48,8 +48,8 @@ class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.std_outlier = float
-        self.std = float
+        self.std_outlier = float()
+        self.std = float()
         self.lbl_id = Optional[str]
         self.lbl_list = List[str]
         self.pre_list = List[str]
@@ -58,9 +58,9 @@ class PreShin_UI(QWidget):
         self.landmark_value = List[str]
         self.landmark_key = List[str]
         self.id_list = List[str]
-        self.loc_xlsx = str
+        self.loc_xlsx = str()
         self.new_xlsx_outlier = str
-        self.new_xlsx = str
+        self.new_xlsx = str()
         self.landmark_name = List[str]
         self.number = list
         self.df_result = pd.DataFrame
@@ -126,13 +126,12 @@ class PreShin_UI(QWidget):
         btn_export.setText('Export Excel')
         btn_manual.setText('Open Manual')
 
-        self.edt_pre = QLineEdit(self.dialog)
-        self.edt_lbl = QLineEdit(self.dialog)
+        self.lbl_pre = QLabel(self.dialog)
+        self.lbl_lbl = QLabel(self.dialog)
         lbl_unit = QLabel(self.dialog)
         lbl_error = QLabel(self.dialog)
         lbl_outlier = QLabel(self.dialog)
-        self.lbl_outlier_unit = QLabel('mm', self.dialog)
-        self.lbl_mm = QLabel(self.dialog)
+
         lbl_comment = QLabel(self.dialog)
         lbl_xlsx_name = QLabel(self.dialog)
         lbl_xlsx = QLabel(self.dialog)
@@ -143,15 +142,11 @@ class PreShin_UI(QWidget):
         self.edt_xlsx_name = QLineEdit(self.dialog)
         self.edt_xlsx_name.setAlignment(Qt.AlignRight)
 
-        cb = QComboBox(self.dialog)
-        cb.addItem('mm')
-        cb.addItem('Pixel')
-        cb.setGeometry(290, 200, 70, 20)
-        cb.currentTextChanged.connect(self.cb_unit_change)
+        self.combobox()
 
         self.lbl_outlier_unit.setGeometry(270, 305, 100, 20)
-        self.edt_lbl.setGeometry(130, 35, 190, 20)
-        self.edt_pre.setGeometry(130, 60, 190, 20)
+        self.lbl_lbl.setGeometry(130, 35, 230, 20)
+        self.lbl_pre.setGeometry(130, 60, 230, 20)
         lbl_unit.setGeometry(220, 200, 100, 20)
         lbl_error.setGeometry(220, 230, 100, 20)
         lbl_outlier.setGeometry(220, 280, 100, 20)
@@ -166,7 +161,6 @@ class PreShin_UI(QWidget):
         lbl_unit.setText('Unit Setting')
         lbl_error.setText('Error Safe Zone')
         lbl_outlier.setText('outlier')
-        self.lbl_mm.setText('mm')
         lbl_comment.setText('Comment')
         lbl_xlsx_name.setText('파일명 : ')
         lbl_xlsx.setText('.xlsx')
@@ -192,7 +186,16 @@ class PreShin_UI(QWidget):
         self.dialog.exec()
         logger.info('PreShin_UI close')
 
-    # 체크박스 변환
+    def combobox(self):
+        cb = QComboBox(self.dialog)
+        cb.addItem('mm')
+        cb.addItem('Pixel')
+        self.lbl_outlier_unit = QLabel('mm', self.dialog)
+        self.lbl_mm = QLabel('mm', self.dialog)
+        cb.setGeometry(290, 200, 70, 20)
+        cb.currentTextChanged.connect(self.cb_unit_change)
+
+    # 콤보 박스 변환
     def cb_unit_change(self, text: str):
         self.lbl_outlier_unit.setText(text)
         self.lbl_mm.setText(text)
@@ -218,10 +221,10 @@ class PreShin_UI(QWidget):
                     if ext != '.txt' or ext == '':
                         messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                         logger.error('label file format Error')
-                        self.edt_lbl.setText('')
+                        self.lbl_lbl.setText('')
                         break
 
-                    self.edt_lbl.setText(str(self.lbl_id))
+                    self.lbl_lbl.setText(str(self.lbl_id))
                     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
                     # export 에서 하면 안되서 미리 넣음
                     self.landmark_name = self.compare_landmark(self.lbl_id, self.lbl_list)
@@ -231,7 +234,7 @@ class PreShin_UI(QWidget):
                 logger.error('label file format Error')
 
         else:
-            self.edt_lbl.setText('')
+            self.lbl_lbl.setText('')
         logger.info('label_btn out')
 
     def btn_pre_clicked(self):
@@ -249,16 +252,16 @@ class PreShin_UI(QWidget):
                     if ext != '.txt' or ext == '':
                         messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                         logger.error('label file format Error')
-                        self.edt_pre.setText('')
+                        self.lbl_pre.setText('')
                         break
 
-                    self.edt_pre.setText(str(self.pre_id))
+                    self.lbl_pre.setText(str(self.pre_id))
             else:
                 messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
                 logger.error('label file format Error')
 
         else:
-            self.edt_pre.setText('')  # 껏을때 빈칸
+            self.lbl_pre.setText('')  # 껏을때 빈칸
         logger.info('predict_btn out')
 
     # landmark.dat 구조 변경 후 number - key, name - value 로 지정
@@ -406,9 +409,10 @@ class PreShin_UI(QWidget):
         df.drop('z', axis=1, inplace=True)  # x,y,z제거
 
     def btn_export_clicked(self):
+        self.landmark()
         logger.info('btn_export_clicked')
         # lbl, pre 둘다 선택
-        if self.edt_lbl.text() != '' and self.edt_pre.text() != '':
+        if self.lbl_lbl.text() != '' and self.lbl_pre.text() != '':
 
             if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
 
@@ -559,7 +563,7 @@ class PreShin_UI(QWidget):
                         df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_Outlier_Aver', 'std': 'Remove_Outlier_std'})
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
-                        print(df_outlier_aver_std_column)
+
                         self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')
 
@@ -588,7 +592,7 @@ class PreShin_UI(QWidget):
                 logger.error("no file name")
 
         # label, predict 선택 되지 않았을 때
-        elif self.edt_lbl.text() == '' or self.edt_pre.text() == '':
+        elif self.lbl_lbl.text() == '' or self.lbl_pre.text() == '':
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
             logger.error("label, predict location error")
 
