@@ -3,6 +3,7 @@ import sys
 
 import PreShin.preshin_UI_2d
 import PreShin.preshin_UI
+import PreShin.volume_template
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
 
@@ -56,6 +57,11 @@ def btn_PreShin_2D_clicked():
         return
     logger.info('btn_PreShin_2D UI end')
 
+def btn_vtp_clicked():
+    logger.info('Volume_template UI start')
+    PreShin.volume_template.Vol_Template_UI()
+    logger.info('Volume_template UI end')
+
 
 class Main(QWidget):
     def __init__(self):
@@ -73,6 +79,11 @@ class Main(QWidget):
         btn_PreShin_2d.setText("PreShin_2D")
         btn_PreShin_2d.setGeometry(20, 60, 100, 20)
         btn_PreShin_2d.clicked.connect(btn_PreShin_2D_clicked)
+
+        btn_vtp = QPushButton(self)
+        btn_vtp.setText("Volume_template")
+        btn_vtp.setGeometry(20, 10, 100, 20)
+        btn_vtp.clicked.connect(btn_vtp_clicked)
 
         self.setWindowTitle('AI')
         self.setGeometry(500, 300, 150, 150)
