@@ -72,17 +72,17 @@ class Main(QWidget):
         logger.info('Main start')
         btn_PreShin = QPushButton(self)
         btn_PreShin.setText("PreShin_3D")
-        btn_PreShin.setGeometry(20, 35, 100, 20)
+        btn_PreShin.setGeometry(20, 35, 120, 20)
         btn_PreShin.clicked.connect(btn_PreShin_clicked)
 
         btn_PreShin_2d = QPushButton(self)
         btn_PreShin_2d.setText("PreShin_2D")
-        btn_PreShin_2d.setGeometry(20, 60, 100, 20)
+        btn_PreShin_2d.setGeometry(20, 60, 120, 20)
         btn_PreShin_2d.clicked.connect(btn_PreShin_2D_clicked)
 
         btn_vtp = QPushButton(self)
         btn_vtp.setText("Volume_template")
-        btn_vtp.setGeometry(20, 10, 100, 20)
+        btn_vtp.setGeometry(20, 10, 120, 20)
         btn_vtp.clicked.connect(btn_vtp_clicked)
 
         self.setWindowTitle('AI')
