@@ -28,6 +28,7 @@ accuracy_range = 100
 
 # 필요한 predict 파일 : air, sts, hts 정보가 들어있는 predict txt 파일 폴더들
 # 필요한 label 파일 : air, sts, hts png label 파일이 들어있는 폴더들
+# predict 파일의 구조는 아직 id 당 각각 폴더 안에 있을지 하나의 폴더에 있을지 정해지지 않음
 
 def messagebox(text: str, i: str):
     signBox = QMessageBox()

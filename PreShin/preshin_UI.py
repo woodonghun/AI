@@ -20,6 +20,7 @@ from PreShin.loggers import logger
 
 # 3d landmark 번호, x, y, z 의 모음이 모음이 들어있는 predict, label txt 파일의 폴더들
 # grouping 되어 있는 json 파일이 필요함
+# 3d 용 json 파일 존재함
 
 def btn_manual_clicked():
     os.startfile(f'{os.getcwd()}/AI_manual.pdf')  # 메뉴얼 오픈

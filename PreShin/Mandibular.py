@@ -12,6 +12,9 @@ from openpyxl.styles import PatternFill, Font, Border, borders
 
 from PreShin.loggers import logger
 
+# id 에 해당되는 nrrd 파일 필요 ( class )
+# 현재 class 가 몇개로 나누어지는지 nrrd 파일 명 또한 정해진게 없음.
+
 batch = '4'
 rate = '2e-4'
 optimizer = 'adam'
