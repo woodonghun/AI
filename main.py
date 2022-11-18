@@ -4,6 +4,7 @@ import sys
 import PreShin.preshin_UI_2d
 import PreShin.preshin_UI
 import PreShin.volume_template
+import PreShin.Mandibular
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
 
@@ -63,6 +64,10 @@ def btn_vtp_clicked():  # 볼륨템플릿
     PreShin.volume_template.Vol_Template_UI()
     logger.info('Volume_template UI end')
 
+def btn_mandibular_clicked():  # 볼륨템플릿
+    logger.info('mandibular UI start')
+    PreShin.Mandibular.Mandibular_UI()
+    logger.info('mandibular UI end')
 
 def btn_manual_clicked():  # 메뉴얼 오픈
     os.startfile(f'{os.getcwd()}/AI_manual.pdf')
@@ -75,24 +80,30 @@ class Main(QWidget):
 
     def initUI(self):
         logger.info('Main start')
+
         btn_PreShin = QPushButton(self)
         btn_PreShin.setText("PreShin_3D")
-        btn_PreShin.setGeometry(20, 60, 120, 20)
+        btn_PreShin.setGeometry(20, 85, 120, 20)
         btn_PreShin.clicked.connect(btn_PreShin_clicked)
 
         btn_PreShin_2d = QPushButton(self)
         btn_PreShin_2d.setText("PreShin_2D")
-        btn_PreShin_2d.setGeometry(20, 85, 120, 20)
+        btn_PreShin_2d.setGeometry(20, 110, 120, 20)
         btn_PreShin_2d.clicked.connect(btn_PreShin_2D_clicked)
 
         btn_vtp = QPushButton(self)
         btn_vtp.setText("Volume_template")
-        btn_vtp.setGeometry(20, 35, 120, 20)
+        btn_vtp.setGeometry(20, 60, 120, 20)
         btn_vtp.clicked.connect(btn_vtp_clicked)
+
+        btn_mandibular = QPushButton(self)
+        btn_mandibular.setText("Mandibular")
+        btn_mandibular.setGeometry(20, 135, 120, 20)
+        btn_mandibular.clicked.connect(btn_mandibular_clicked)
 
         btn_manual = QPushButton(self)
         btn_manual.setText("Manual Open")
-        btn_manual.setGeometry(20, 10, 120, 20)
+        btn_manual.setGeometry(20, 10, 120, 45)
         btn_manual.clicked.connect(btn_manual_clicked)
 
         self.setWindowTitle('AI')

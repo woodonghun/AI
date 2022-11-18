@@ -9,6 +9,8 @@ import PreShin.preshin_UI
 from PreShin.preshin_UI import average, messagebox
 from PreShin.loggers import logger
 
+# 2d landmark 번호, x, y, z 의 모음이 모음이 들어있는 predict, label txt 파일의 폴더들
+# grouping 되어 있는 json 파일이 필요함
 
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):

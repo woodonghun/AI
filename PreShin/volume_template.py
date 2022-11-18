@@ -10,7 +10,7 @@ from PySide2.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QPushButt
 from matplotlib import pyplot as plt
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Border, PatternFill, borders, Font
-
+import matplotlib.ticker as mticker
 from PreShin.loggers import logger
 
 batch = '4'
@@ -25,6 +25,9 @@ error_rate_range = 10    # 축 범위 변경.
 sheet_range = 40
 accuracy_range = 100
 # 엑셀 필터 기능이 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
+
+# 필요한 predict 파일 : air, sts, hts 정보가 들어있는 predict txt 파일 폴더들
+# 필요한 label 파일 : air, sts, hts png label 파일이 들어있는 폴더들
 
 def messagebox(text: str, i: str):
     signBox = QMessageBox()
@@ -234,7 +237,7 @@ class Vol_Template_UI(QWidget):
                     if loc_xlsx != '':  # 폴더 선택 했을때
                         file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
 
-                        if fr'{self.edt_xlsx_name.text()}.xlsx' not in file:  # 동일한 파일명이 없을때
+                        if fr'{self.edt_xlsx_name.text()}' not in file:  # 동일한 파일명이 없을때
                             os.mkdir(f'{loc_xlsx}/{self.edt_xlsx_name.text()}')
 
                             vol = Vol_Template()  # class 가져옴
@@ -281,34 +284,37 @@ class Vol_Template_UI(QWidget):
         else:
             messagebox('Warning', "label 또는 predict 경로를 확인 하세요.")
             logger.error("label, predict location error")
+
         logger.info("Export Button OUT")
 
     def insert_comment(self, loc: str, xlsx: str, sheet: str):  # comment 삽입
         wb = openpyxl.load_workbook(filename=f'{loc}/{xlsx}')
         ws = wb[sheet]
         # table 에 default 값 출력
-        ws.cell(row=1, column=6).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}' \
+        ws.cell(row=1, column=7).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
                                          f', optimizer = {self.table.item(2, 1).text()}' \
                                          f', aug = {self.table.item(3, 1).text()} '
-        ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
+        ws.cell(row=2, column=7).value = f'comment : {self.edt.toPlainText()}'
 
+        # sheet1 에는 error rate, sheet, accuracy
         if sheet == 'Sheet1':
             ws.cell(row=1,
                     column=2).value = f'Safe Error rate : {self.edt_error_rate.text()} %  sheet : {self.lbl_error_sheet.text()} 장  (Accuracy : {100 - int(self.edt_error_rate.text())}%) '
             ws.cell(row=2,
                     column=2).value = f'Remove Outlier Rate : {self.edt_outlier_rate.text()} %  sheet : {self.lbl_outlier_sheet.text()} 장  (Accuracy : {100 - int(self.edt_outlier_rate.text())})%'
+
         elif sheet == 'Sheet2':
             ws.cell(row=1, column=2).value = f'Error Safe Zone : {100 - float(self.edt_error_rate.text())} %  '
             ws.cell(row=2, column=2).value = f'Remove Outlier Rate : {100 - float(self.edt_outlier_rate.text())} %  '
 
-        ws.cell(row=1, column=1).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-        ws.cell(row=2, column=1).fill = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')
+        ws.cell(row=1, column=1).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')    # 색상 노랑
+        ws.cell(row=2, column=1).fill = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')    # 빨강
 
-        ws.cell(row=1, column=2).font = Font(bold=True)
+        ws.cell(row=1, column=2).font = Font(bold=True)     # 글씨 굵게
         ws.cell(row=2, column=2).font = Font(bold=True)
-        ws.cell(row=1, column=6).font = Font(bold=True)
-        ws.cell(row=2, column=6).font = Font(bold=True)
+        ws.cell(row=1, column=7).font = Font(bold=True)
+        ws.cell(row=2, column=7).font = Font(bold=True)
 
         wb.save(filename=f'{loc}/{xlsx}')
 
@@ -316,8 +322,8 @@ class Vol_Template_UI(QWidget):
 class Vol_Template:
     def __init__(self):
         super().__init__()
-        self.error_number_lbl = list
-        self.pre_diff = list
+        self.error_number_lbl = list    # label id 폴더 안의 파일 개수가 맞지 않는 id list
+        self.pre_diff = list    # perdict, label 차집합 lsit
         self.lbl_diff = list
         self.accuracy_aver_std = pd.DataFrame()
         self.sheet_aver_std = pd.DataFrame()
@@ -339,6 +345,7 @@ class Vol_Template:
         self.white_color = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
 
     def label(self, loc: str):  # 정답 기준
+        # 폴더에 각각 존재하지 않고 하나의 폴더에 전부 있을 때
         logger.info('Label Data Transform Start')
         label_dict = {}
         label_id_list = os.listdir(loc)  # 환자 list
@@ -347,13 +354,12 @@ class Vol_Template:
             if '.' in i:  # 폴더가 아닌 확장자인 경우 제외
                 logger.error(f'폴더가 아닌 파일이 존재합니다. File Name : {i}')
                 continue
-            data_list = os.listdir(f'{loc}/{i}')  # air, hts, sts 순서
+            data_list = os.listdir(fr'{loc}\{i}')  # air, hts, sts 순서
 
             data = [-999999, -999999, -999999]  # -999999 로 표현해서 label 폴더에 air,sts,hts 중 없는게 있을 경우 이상치로 만들어 삭제해서 없는 이미지 판단함
             if len(data_list) > 3 and '.png' not in data_list:  # png 파일이 아니거나 3개 초과일 때 제외, 3개 미만인 경우에는 진행하고 결측치로 표현한다.
                 logger.error(f'파일 구성이 올바르지 않습니다. File Name : {i} - {data_list}')
                 continue
-
             for j in range(len(data_list)):
 
                 if 'hts' in data_list[j]:  # hts
@@ -367,46 +373,77 @@ class Vol_Template:
 
         df_label = pd.DataFrame(label_dict, index=['Air', 'Hard Tissue', 'Soft Tissue'])
         logger.info('label data transform end')
-
         return df_label
 
+    # 폴더안에 들어있을때
+    # def predict(self, loc: str):  # ai 데이터 기준
+    #     logger.info('predict data transform start')
+    #
+    #     predict_dict = {}
+    #     predict_id_list = os.listdir(loc)  # 환자 list
+    #
+    #     for i in predict_id_list:
+    #         if '.' in i:  # 폴더가 아닌 확장자가 들어간 파일인 경우 제외
+    #             logger.error(f'폴더가 아닌 파일이 존재합니다. File Name : {i}')
+    #             continue
+    #
+    #         data_list = os.listdir(f'{loc}/{i}')  # txt 하나, 2개 이상 일 때 잘못된 것으로 나중에 error 코드 추가
+    #
+    #         data = [0, 0, 0]
+    #         if len(data_list) > 1 and '.dat' not in data_list:  # .dat 파일이 아닌 경우, 폴더안에 파일이 2개 이상인 경우 제외
+    #             logger.error(f'파일 구성이 올바르지 않습니다. File Name : {i} - {data_list}')
+    #             continue
+    #
+    #         for j in range(len(data_list)):
+    #             txt = open(f'{loc}/{i}/{data_list[j]}', 'r')
+    #             lines = txt.readlines()  # txt 한줄씩 읽기
+    #
+    #             for k in range(len(lines)):
+    #                 line = lines[k].split(',')  # air,0.35156316 형식, 숫자만 남김
+    #                 line_float = line[1].split('\n')
+    #
+    #                 if float(line_float[0]) >= 1:
+    #                     logger.error(f'predict {j} 폴더의 data 값이 올바르지 않습니다 {line}')  # dat 1이상 값은 없음 error 추가
+    #                     data[k] = -999999
+    #
+    #                 else:
+    #                     data[k] = float(line_float[0])
+    #
+    #         predict_dict[i] = data  # dict 에 추가
+    #
+    #     df_predict = pd.DataFrame(predict_dict, index=['Air', 'Hard Tissue', 'Soft Tissue'])
+    #     logger.info('Label Data Transform End')
+    #
+    #     return df_predict
+
+    # data 가 전체 밖에 있을 때
     def predict(self, loc: str):  # ai 데이터 기준
         logger.info('predict data transform start')
 
         predict_dict = {}
         predict_id_list = os.listdir(loc)  # 환자 list
 
-        for i in predict_id_list:
-            if '.' in i:  # 폴더가 아닌 확장자가 들어간 파일인 경우 제외
-                logger.error(f'폴더가 아닌 파일이 존재합니다. File Name : {i}')
-                continue
-
-            data_list = os.listdir(f'{loc}/{i}')  # txt 하나, 2개 이상 일 때 잘못된 것으로 나중에 error 코드 추가
+        for j in range(len(predict_id_list)):
             data = [0, 0, 0]
-            if len(data_list) > 1 and '.dat' not in data_list:  # .dat 파일이 아닌 경우, 폴더안에 파일이 2개 이상인 경우 제외
-                logger.error(f'파일 구성이 올바르지 않습니다. File Name : {i} - {data_list}')
-                continue
+            txt = open(f'{loc}/{predict_id_list[j]}', 'r')
+            lines = txt.readlines()  # txt 한줄씩 읽기
 
-            for j in range(len(data_list)):
-                txt = open(f'{loc}/{i}/{data_list[j]}', 'r')
-                lines = txt.readlines()  # txt 한줄씩 읽기
+            for k in range(len(lines)):
+                line = lines[k].split(',')  # air,0.35156316 형식, 숫자만 남김
+                line_float = line[1].split('\n')
 
-                for k in range(len(lines)):
-                    line = lines[k].split(',')  # air,0.35156316 형식, 숫자만 남김
-                    line_float = line[1].split('\n')
+                if float(line_float[0]) >= 1:
+                    logger.error(f'predict {j} 폴더의 data 값이 올바르지 않습니다 {line}')  # dat 1이상 값은 없음 error 추가
+                    data[k] = -999999
 
-                    if float(line_float[0]) >= 1:
-                        logger.error(f'predict {j} 폴더의 data 값이 올바르지 않습니다 {line}')  # dat 1이상 값은 없음 error 추가
-                        data[k] = -999999
+                else:
+                    data[k] = float(line_float[0])
 
-                    else:
-                        data[k] = float(line_float[0])
-
-            predict_dict[i] = data  # dict 에 추가
-
+            predict_dict[predict_id_list[j].split('.')[0]] = data  # dict 에 추가
+        print(predict_dict)
         df_predict = pd.DataFrame(predict_dict, index=['Air', 'Hard Tissue', 'Soft Tissue'])
         logger.info('Label Data Transform End')
-
+        print(df_predict)
         return df_predict
 
     def percent(self, lbl: pd.DataFrame, pre: pd.DataFrame, *args) -> pd.DataFrame:  # 퍼센티지의 오차, 셩공률 에 대한 결과 값 함수
@@ -430,7 +467,6 @@ class Vol_Template:
         result_percent = result_percent.dropna(how='all', axis='columns')
 
         logger.info(f'{args[0]} - Data Transform End')
-
         return result_percent
 
     def sheet(self, lbl: pd.DataFrame, pre: pd.DataFrame) -> pd.DataFrame:  # 장수 차이에 대한 결과 값
@@ -561,9 +597,13 @@ class Vol_Template:
             ws.cell(row=2, column=16).font = Font(bold=True)
 
         ws.cell(row=4, column=1).value = 'Patient_ID'
+        ws.cell(row=4, column=6).value = 'Error Rate'
+        ws.cell(row=4, column=6).font = Font(bold=True)
         ws.cell(row=4, column=13).value = 'Patient_ID'
+        ws.cell(row=4, column=18).value = 'Sheet'
+        ws.cell(row=4, column=18).font = Font(bold=True)
 
-        # patient 결과 outlier, error 적용 색상
+        # patient 결과 outlier, error 색상 적용 시킴
         for row in range(5, ws.max_row + 1):
 
             for column in range(2, 5):  # error 범위
@@ -619,6 +659,7 @@ class Vol_Template:
         self.graph(self.sheet_aver_std, 'sheet', '', loc, sheet_error, file_name)
         self.graph(self.sheet_aver_std, 'remove_outlier_sheet', 'Out_', loc, sheet_error, file_name)
         img_list = os.listdir(f'{loc}/{file_name}_graph_image')
+
         for i in img_list:
             if '.png' in i:
                 img = Image(image_folder_loc + f'/{i}')
@@ -633,6 +674,7 @@ class Vol_Template:
 
         # 엑셀 필터 적용 ------------------------------------------------------- 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
         # https://openpyxl.readthedocs.io/en/stable/filters.html 공식 사이트
+        # 필터 자체를 생성 하는 것은 적용되지만, 생성과 동시에 필터를 적용되지 않는다.
         ws.auto_filter.ref = f'A4:D{ws.max_row}'
 
         # column 사이즈
@@ -742,6 +784,7 @@ class Vol_Template:
 
         if 'error_rate' in title:  # sheet 와 error 에 따른 축 범위 변경
             plt.ylim([0, error_rate_range])
+            # plt.gca().yaxis.set_major_formatter(mticker.FormatStrFormaater('%i %'))
             if 'accuracy' in title:
                 plt.ylim([0, accuracy_range])
 
