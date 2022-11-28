@@ -802,6 +802,7 @@ class PreShin_UI(QWidget):
         for e in range(5):
             ws.cell(row=4, column=1 + e).fill = self.blue_color
             ws.cell(row=4, column=1 + e).border = self.thin_border
+        # wb.save(filename=xlsx)
 
         group_row = 5  # 시작줄
         landmark_row = 6
@@ -825,13 +826,15 @@ class PreShin_UI(QWidget):
                 # None, ' ' 을 제외한 합
 
                 for row in range(landmark_row, landmark_row + len(group_value[i])):    # 합
+
                     data = ws.cell(row=row, column=2).value
                     if data == 'None' or data == ' ':
                         pass
                     else:
                         result += ws.cell(row=row, column=2).value
-                        result_outlier += ws.cell(row=row, column=4).value
-                        num_outlier += 1
+                        if ws.cell(row=row, column=4).value != ' ':
+                            result_outlier += ws.cell(row=row, column=4).value
+                            num_outlier += 1
                         num += 1
 
                 aver = result / num
@@ -842,7 +845,8 @@ class PreShin_UI(QWidget):
                     if std_data == 'None' or std_data == ' ':
                         pass
                     else:
-                        dispersion_outlier += ((ws.cell(row=dis, column=4).value - outlier_aver) ** 2) / num_outlier
+                        if ws.cell(row=dis, column=4).value != ' ':
+                            dispersion_outlier += ((ws.cell(row=dis, column=4).value - outlier_aver) ** 2) / num_outlier
                         dispersion += ((ws.cell(row=dis, column=2).value - aver) ** 2) / num
 
                 ws[f'B{group_row}'] = aver  # Group 평균 삽입

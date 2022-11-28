@@ -421,7 +421,7 @@ class Mandibular:
 
         return img_folder
 
-    def graph(self, df: pd.DataFrame, title: str, outlier: str, loc: str, error_line, file_name: str):
+    def graph(self, df: pd.DataFrame, title: str, outlier: str, loc: str, error_line, file_name: str, ):
         logger.info(f'"{title}" - Make Graph Start')
         graph = df
         graph_dict = graph.to_dict('list')  # dataframe list 제작
@@ -432,6 +432,8 @@ class Mandibular:
         xtick_label_position = list(range(len(list(graph.index))))  # x 축에 글시 넣을 위치
 
         if 'accuracy' in title:  # 성공률 일때 적용
+            plt.ylim([0, 100])
+
             for j in range(len(list(graph.index))):
                 if float(graph_dict[f'{outlier}Aver'][j]) <= float(error_line):  # error_line 값보다 낮으면 색변환 // 성공률 낮으면~
                     colors[j] = '#FFCCCC'  # error 빨강
@@ -441,11 +443,10 @@ class Mandibular:
                 if float(graph_dict[f'{outlier}Aver'][j]) >= float(error_line):  # error_line 값보다 낮으면 색변환 // 오차율 높으면~
                     colors[j] = '#FFCCCC'  # error 빨강
 
-        # if 'error_rate' in title:  # sheet 와 error 에 따른 축 범위 변경
-        #     plt.ylim([0, error_rate_range])
+        # if 'accuracy' in title:  # sheet 와 error 에 따른 축 범위 변경
         #     # plt.gca().yaxis.set_major_formatter(mticker.FormatStrFormaater('%i %'))
-        #     if 'accuracy' in title:
-        #         plt.ylim([0, accuracy_range])
+        # elif 'accuracy' in title:
+        #     plt.ylim([0, accuracy_range])
         #
         # elif 'sheet' in title:
         #     plt.ylim([0, sheet_range])
