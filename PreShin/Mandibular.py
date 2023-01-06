@@ -269,6 +269,8 @@ class Mandibular_UI(QWidget):
 class Mandibular:
     def __init__(self):
         super().__init__()
+        self.predict_id_list: list = []
+        self.label_id_list: list = []
         self.voxel_dict: dict = {}
         self.thin_border = Border(left=borders.Side(style='thin'),
                                   right=borders.Side(style='thin'),
@@ -280,15 +282,12 @@ class Mandibular:
         self.gray_color2 = PatternFill(start_color='e0e0eb', end_color='e0e0eb', fill_type='solid')
         self.outlier_color = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')
 
-    def label(self, loc: str) -> list:
-        label_id_list = os.listdir(loc)  # 환자 list
+    def label(self, loc: str):
+        self.label_id_list = os.listdir(loc)  # 환자 list
 
-        return label_id_list
+    def predict(self, loc: str):
+        self.predict_id_list = os.listdir(loc)  # 환자 list
 
-    def predict(self, loc: str) -> list:
-        predict_id_list = os.listdir(loc)  # 환자 list
-
-        return predict_id_list
 
     def compare_lbl_pre(self, lbl_list: list, pre_list: list):
         intersection = list(set(lbl_list) & set(pre_list))  # 두개 다있는 폴더
@@ -353,9 +352,8 @@ class Mandibular:
         # inter 에서 목록을 가져와 for 문 돌려서 id 폴더 안에 있는 class 4개 ( 아직 개수 미정 )
         # nrrd 파일 읽어오고 연산 까지 한 뒤에 dataframe 에 저장 한다.
 
-    # dataframe 평균 표준 편차 제작.
     def dataframe_avr_std(self, result_df: pd.DataFrame, outlier: float, *args):
-
+        """dataframe 평균,표준 편차 제작"""
         if args[0] == 'accuracy':
             result_df_outlier = result_df[result_df > outlier]
         else:
@@ -399,7 +397,8 @@ class Mandibular:
         return df_sum_result, df_only_aver, df_sum_result_voxel, df_voxel_only_aver, df_sum_result_mm, df_mm_only_aver
 
     # accuracy,aver, error, aver, voxel, aver 순서대로 6개
-    def to_xlsx(self, loc: str, xlsx: str, *args: pd.DataFrame):  # 엑셀 생성, 결과값 삽입
+    def to_xlsx(self, loc: str, xlsx: str, *args: pd.DataFrame):
+        """엑셀 생성, 결과값 삽입"""
         logger.info('make xlsx start')
 
         writer = pd.ExcelWriter(f'{loc}/{xlsx}', engine='openpyxl')  # pandas 엑셀 작성
@@ -422,6 +421,7 @@ class Mandibular:
         return img_folder
 
     def graph(self, df: pd.DataFrame, title: str, outlier: str, loc: str, error_line, file_name: str, ):
+        """그래프 제작"""
         logger.info(f'"{title}" - Make Graph Start')
         graph = df
         graph_dict = graph.to_dict('list')  # dataframe list 제작
@@ -612,7 +612,7 @@ class Mandibular:
 
         img_folder = self.create_img_folder(f'{loc_xlsx}/{xlsx_name}', xlsx_name)  # image 폴더 생성
 
-        mn_label = self.label(lbl_loc)
+        self.label(lbl_loc)
         mn_predict = self.predict(pre_loc)
 
         df_result_accuracy, df_voxel = self.mk_dataframe(lbl_loc, mn_label, pre_loc, mn_predict)  # 성공률, id가 가로축

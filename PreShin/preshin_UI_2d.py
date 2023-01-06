@@ -12,17 +12,19 @@ from PreShin.loggers import logger
 # 2d landmark 번호, x, y, z 의 모음이 모음이 들어있는 predict, label txt 파일의 폴더들
 # grouping 되어 있는 json 파일이 필요함
 # 2d 용 json 파일 존재하지 않음
+''' 2D landmark spacing comment에 입력 '''
 
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
+        self.resize_pixel_to_mm = 0.385
         super().__init__()
 
     def combobox(self):
         cb = QComboBox(self.dialog)
-        cb.addItem('Pixel')
         cb.addItem('mm')
-        self.lbl_outlier_unit = QLabel('Pixel', self.dialog)
-        self.lbl_mm = QLabel('Pixel', self.dialog)
+        cb.addItem('Pixel')
+        self.lbl_outlier_unit = QLabel('mm', self.dialog)
+        self.lbl_mm = QLabel('mm', self.dialog)
         cb.setGeometry(290, 200, 70, 20)
         cb.currentTextChanged.connect(self.cb_unit_change)
 
@@ -59,6 +61,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
         df.drop('y', axis=1, inplace=True)
 
     def btn_export_clicked(self):
+
         global df_lbl
         logger.info('2d_btn_export_clicked')
         # lbl, pre 둘다 선택
@@ -117,6 +120,10 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                             df_sheet.insert(0, patient_id, list_land)  # 새로운 데이터 프레임 첫번째에 추가됨. (0, 이름, 결과)
 
                         # outlier 의 수치 이하의 값만 출력 후 평균값 만들어서 landmark 와 합침
+
+                        ''' 추정된 mm 값으로 환산하는 과정 : 1 pixel 당 1 mm 로 추정, size를 1/5로 바꾸어 기존 pixel 결과에 0.5를 곱하여 mm로 변환 '''
+                        df_sheet = df_sheet*self.resize_pixel_to_mm
+
                         df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
                         aver_outlier = average(df_sheet_outlier)
                         df_sheet_outlier['Aver'] = df_sheet_outlier.mean(axis=1)
@@ -216,6 +223,7 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
                         self.sheet1_setting(self.new_xlsx)
                         self.sheet2_setting(self.new_xlsx)
                         self.sheet3_setting(self.new_xlsx)
+                        self.total_aver_std(self.new_xlsx)
                         ############
                         self.error_id()
                         messagebox('notice', 'Excel 생성이 완료 되었습니다.')
@@ -240,3 +248,44 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
 
         return group
+
+    def landmark(self):
+
+        txt = open(f'{os.getcwd()}/landmark_2D.dat', 'r')
+
+        landmark = txt.readlines()
+        landmark_chunk = []
+
+        for line in landmark:
+            # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
+            # 한줄에 총 12개
+            # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
+            # 총 landmark list 안에 12개의 list 생성
+            landmark = line.replace(',', ' ')
+            landmark = landmark.replace('\t', ',')
+            landmark = landmark.replace('\n', '')
+            landmark = landmark.replace('   ', ',')
+            landmark = landmark.split(',')
+
+            # 필요한 위치는 2,3번째
+            if len(landmark) < 3:
+                logger.error('landmark.data format error')
+                logger.error(landmark)
+
+            else:
+                landmark_chunk.append(landmark)
+
+        txt.close()
+        # id : key , number : value 형태 dict 로 만듬
+        landmark_dict = {}
+        for i in range(len(landmark_chunk) - 1):
+            landmark_dict[landmark_chunk[i][2]] = landmark_chunk[i][1]
+
+        # key, value 분리
+        self.landmark_key = list(landmark_dict.keys())
+        self.landmark_value = list(landmark_dict.values())
+
+        # 2[Sella] 형태 만듬
+        self.landmark_name_value = []
+        for i in range(len(self.landmark_key)):
+            self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')
