@@ -17,7 +17,12 @@ from PreShin.loggers import logger
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
         self.resize_pixel_to_mm = 0.385
+        self.json_name = 'group_points_preShin_2D.json'
+        self.landmark_dat_name = 'landmark_2D.dat'
         super().__init__()
+
+    def radiobutton(self):
+        pass
 
     def combobox(self):
         cb = QComboBox(self.dialog)
@@ -248,44 +253,3 @@ class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
 
         return group
-
-    def landmark(self):
-
-        txt = open(f'{os.getcwd()}/landmark_2D.dat', 'r')
-
-        landmark = txt.readlines()
-        landmark_chunk = []
-
-        for line in landmark:
-            # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
-            # 한줄에 총 12개
-            # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
-            # 총 landmark list 안에 12개의 list 생성
-            landmark = line.replace(',', ' ')
-            landmark = landmark.replace('\t', ',')
-            landmark = landmark.replace('\n', '')
-            landmark = landmark.replace('   ', ',')
-            landmark = landmark.split(',')
-
-            # 필요한 위치는 2,3번째
-            if len(landmark) < 3:
-                logger.error('landmark.data format error')
-                logger.error(landmark)
-
-            else:
-                landmark_chunk.append(landmark)
-
-        txt.close()
-        # id : key , number : value 형태 dict 로 만듬
-        landmark_dict = {}
-        for i in range(len(landmark_chunk) - 1):
-            landmark_dict[landmark_chunk[i][2]] = landmark_chunk[i][1]
-
-        # key, value 분리
-        self.landmark_key = list(landmark_dict.keys())
-        self.landmark_value = list(landmark_dict.values())
-
-        # 2[Sella] 형태 만듬
-        self.landmark_name_value = []
-        for i in range(len(self.landmark_key)):
-            self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')

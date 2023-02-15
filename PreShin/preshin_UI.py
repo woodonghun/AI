@@ -11,7 +11,7 @@ from openpyxl.drawing.image import Image
 from openpyxl.styles import Border, borders
 import openpyxl
 from PySide2.QtWidgets import QWidget, QPushButton, QFileDialog, QDialog, QLabel, QTableWidget, \
-    QTableWidgetItem, QMessageBox, QPlainTextEdit, QLineEdit, QComboBox
+    QTableWidgetItem, QMessageBox, QPlainTextEdit, QLineEdit, QComboBox, QRadioButton
 import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
@@ -22,7 +22,6 @@ from PreShin.loggers import logger
 
 # UI 에 따로 on3ds용 버튼, on3d용 버튼 제작 하여 쉽게 변환하게 제작해야함.
 # landmark.dat 에서 landmark 의 이름 정보 가지고옴. 현재 on3d 버전
-# landmark.dat 에서 읽어오는 것이 아닌 xlsx 에서 읽어오는 것으로 변경해야할 필요가 있음.
 # 3d landmark 번호, x, y, z 의 모음이 모음이 들어있는 predict, label txt 파일의 폴더들
 # grouping 되어 있는 json 파일이 필요함
 # 3d 용 json 파일 존재함
@@ -56,6 +55,8 @@ class PreShin_UI(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.landmark_dat_name = 'landmark_on3ds.dat'
+        self.json_name = 'on3ds_group_points.json'
         self.std_outlier = float()
         self.std = float()
         self.lbl_id = Optional[str]
@@ -126,7 +127,7 @@ class PreShin_UI(QWidget):
         self.table.setItem(3, 1, QTableWidgetItem(aug))
 
         self.table.setHorizontalHeaderLabels(["Name", "Value"])
-        self.table.setGeometry(20, 195, 180, 145)
+        self.table.setGeometry(20, 220, 180, 145)
 
         btn_pre_path = QPushButton(self.dialog)
         btn_lbl_path = QPushButton(self.dialog)
@@ -155,20 +156,21 @@ class PreShin_UI(QWidget):
         self.edt_xlsx_name.setAlignment(Qt.AlignRight)
 
         self.combobox()
+        self.radiobutton()
 
-        self.lbl_outlier_unit.setGeometry(270, 305, 100, 20)
-        self.lbl_lbl.setGeometry(130, 35, 230, 20)
-        self.lbl_pre.setGeometry(130, 60, 230, 20)
-        lbl_unit.setGeometry(220, 200, 100, 20)
-        lbl_error.setGeometry(220, 230, 100, 20)
-        lbl_outlier.setGeometry(220, 280, 100, 20)
-        self.lbl_mm.setGeometry(270, 255, 50, 20)
-        lbl_comment.move(20, 90)
-        lbl_xlsx_name.move(20, 355)
-        lbl_xlsx.move(173, 355)
-        self.edt_error.setGeometry(220, 255, 50, 20)
-        self.edt_outlier.setGeometry(220, 305, 50, 20)
-        self.edt_xlsx_name.setGeometry(70, 350, 103, 20)
+        self.lbl_outlier_unit.setGeometry(270, 330, 100, 20)
+        self.lbl_lbl.setGeometry(130, 60, 230, 20)
+        self.lbl_pre.setGeometry(130, 85, 230, 20)
+        lbl_unit.setGeometry(220, 225, 100, 20)
+        lbl_error.setGeometry(220, 255, 100, 20)
+        lbl_outlier.setGeometry(220, 305, 100, 20)
+        self.lbl_mm.setGeometry(270, 280, 50, 20)
+        lbl_comment.move(20, 115)
+        lbl_xlsx_name.move(20, 380)
+        lbl_xlsx.move(173, 380)
+        self.edt_error.setGeometry(220, 280, 50, 20)
+        self.edt_outlier.setGeometry(220, 330, 50, 20)
+        self.edt_xlsx_name.setGeometry(70, 375, 103, 20)
 
         lbl_unit.setText('Unit Setting')
         lbl_error.setText('Error Safe Zone')
@@ -179,10 +181,10 @@ class PreShin_UI(QWidget):
 
         self.edt_error.setText(safe_zone)
         self.edt_outlier.setText(outlier)
-        btn_manual.setGeometry(20, 10, 100, 20)
-        btn_lbl_path.setGeometry(20, 35, 100, 20)
-        btn_pre_path.setGeometry(20, 60, 100, 20)
-        btn_export.setGeometry(220, 345, 120, 30)
+        btn_manual.setGeometry(20, 35, 100, 20)
+        btn_lbl_path.setGeometry(20, 60, 100, 20)
+        btn_pre_path.setGeometry(20, 85, 100, 20)
+        btn_export.setGeometry(220, 370, 120, 30)
 
         btn_lbl_path.clicked.connect(self.btn_lbl_clicked)
         btn_pre_path.clicked.connect(self.btn_pre_clicked)
@@ -191,10 +193,10 @@ class PreShin_UI(QWidget):
 
         self.edt = QPlainTextEdit(self.dialog)
         self.edt.setPlainText(comment)
-        self.edt.setGeometry(20, 105, 300, 80)
+        self.edt.setGeometry(20, 130, 300, 80)
 
         self.dialog.setWindowTitle('AI')
-        self.dialog.setGeometry(500, 300, 370, 420)
+        self.dialog.setGeometry(500, 300, 370, 460)
         self.dialog.exec()
         logger.info('PreShin_UI close')
 
@@ -204,13 +206,35 @@ class PreShin_UI(QWidget):
         cb.addItem('Pixel')
         self.lbl_outlier_unit = QLabel('mm', self.dialog)
         self.lbl_mm = QLabel('mm', self.dialog)
-        cb.setGeometry(290, 200, 70, 20)
+        cb.setGeometry(290, 225, 70, 20)
         cb.currentTextChanged.connect(self.cb_unit_change)
 
-    # 콤보 박스 변환
+        # 콤보 박스 변환
     def cb_unit_change(self, text: str):
         self.lbl_outlier_unit.setText(text)
         self.lbl_mm.setText(text)
+
+    def radiobutton(self):
+        self.rdbtn_on3d_s = QRadioButton('ON3DS', self.dialog)
+        self.rdbtn_on3d = QRadioButton('ON3D', self.dialog)
+
+        self.rdbtn_on3d_s.setChecked(True)
+
+        self.rdbtn_on3d_s.clicked.connect(self.radiobutton_clicked)
+        self.rdbtn_on3d.clicked.connect(self.radiobutton_clicked)
+        self.rdbtn_on3d_s.setGeometry(20, 10, 120, 30)
+        self.rdbtn_on3d.setGeometry(140, 10, 120, 30)
+
+    def radiobutton_clicked(self):
+        if self.rdbtn_on3d_s.isChecked():
+            self.json_name = 'on3ds_group_points.json'
+            self.landmark_dat_name = 'landmark_on3ds.dat'
+            print('on3ds')
+        elif self.rdbtn_on3d.isChecked():
+            self.json_name = 'group_points_preShin.json'
+            self.landmark_dat_name = 'landmark.dat'
+            print('on3d')
+
 
     def btn_lbl_clicked(self):
         logger.info('label_btn in')
@@ -279,36 +303,28 @@ class PreShin_UI(QWidget):
     # landmark.dat 구조 변경 후 number - key, name - value 로 지정
     # data 오류 확인
     def landmark(self):
-
-        txt = open(f'{os.getcwd()}/landmark.dat', 'r')
+        """
+        landmark 는 xlsx 을 복사한 txt 파일을 사용 ( 기존 데이터는 복잡해서 변경함 )
+        1   Sella
+        2   N
+        형식으로 구성
+        """
+        txt = open(f'{os.getcwd()}/{self.landmark_dat_name}', 'r')
 
         landmark = txt.readlines()
         landmark_chunk = []
 
         for line in landmark:
-            # split 을 할수 있도록 landmark.dat 구조 파악한 후 변경해서 분리
-            # 한줄에 총 12개
-            # 1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
-            # 총 landmark list 안에 12개의 list 생성
-            landmark = line.replace(',', ' ')
-            landmark = landmark.replace('\t', ',')
-            landmark = landmark.replace('\n', '')
-            landmark = landmark.replace('   ', ',')
-            landmark = landmark.split(',')
-
-            # 필요한 위치는 2,3번째
-            if len(landmark) < 3:
-                logger.error('landmark.data format error')
-                logger.error(landmark)
-
-            else:
-                landmark_chunk.append(landmark)
+            # landmark = landmark.split('\t')
+            line = line.replace('\n', '')
+            line = line.split('\t')
+            landmark_chunk.append(line)
 
         txt.close()
         # id : key , number : value 형태 dict 로 만듬
         landmark_dict = {}
         for i in range(len(landmark_chunk) - 1):
-            landmark_dict[landmark_chunk[i][2]] = landmark_chunk[i][1]
+            landmark_dict[landmark_chunk[i][1]] = landmark_chunk[i][0]
 
         # key, value 분리
         self.landmark_key = list(landmark_dict.keys())
@@ -320,7 +336,7 @@ class PreShin_UI(QWidget):
             self.landmark_name_value.append(str(self.landmark_value[i]) + '[' + str(self.landmark_key[i]) + ']')
 
     def open_json(self):
-        with open(f'{os.getcwd()}/on3ds_group_points-remove_group.json', 'r') as inf:  # group : { landmark 번호, ...}
+        with open(f'{os.getcwd()}/{self.json_name}', 'r') as inf:  # group : { landmark 번호, ...}
             group = ast.literal_eval(inf.read())  # 그룹 포인트 프리신을 dict 로 변환
         return group
 
@@ -1343,6 +1359,7 @@ class PreShin_UI(QWidget):
         plt.savefig(location + f'/{title}{y[0]}.png')  # save, show 의 위치가 바뀌면 save 는 실행되지 않는다, 파일 저장
         plt.close()
 
+    # 엑셀에서 읽어와 dataframe 화 시킨후 data 만 남도록 나머지 값 제거 한 뒤, aver, std 계산 과정 적용 후 excel 에 삽입
     def total_aver_std(self, xlsx: str):
         excel_dataframe = pd.read_excel(xlsx, sheet_name='Sheet1')
         excel_dataframe = excel_dataframe.replace(' ', None)
@@ -1391,7 +1408,7 @@ class PreShin_UI(QWidget):
 
         for i in range(4):
             for j in range(4):
-                ws1.cell(row=ws1.max_row-i, column=ws1.max_column-j).value = ''
+                ws1.cell(row=ws1.max_row - i, column=ws1.max_column - j).value = ''
                 ws1.cell(row=ws1.max_row - i, column=ws1.max_column - j).fill = self.gray_color
                 ws1.cell(row=ws1.max_row - i, column=ws1.max_column - j).border = self.thin_border
 
@@ -1415,6 +1432,8 @@ class PreShin_UI(QWidget):
         ws1.merge_cells('F2:G2')
         ws1.merge_cells('H2:J2')
         ws1.merge_cells('K2:M2')
+        ws1.merge_cells('P1:Q1')
+        ws1.merge_cells('P2:Q2')
 
         for i in range(2):
             for j in range(2, 13):
@@ -1423,11 +1442,21 @@ class PreShin_UI(QWidget):
                 ws1.cell(i + 1, j + 1).fill = self.yellow_color
                 ws1.cell(i + 1, j + 1).alignment = Alignment(horizontal='center')
 
-
+        # ws1.merge_cells('P1:Q1')
+        # ws1.merge_cells('P2:G2')
+        ws1['P1'].fill = self.yellow_color
+        ws1['P2'].fill = self.outlier_color
+        ws1['p2'].font = Font(bold=True, color='FFFFFF')
 
         ws2 = wb['Sheet2']
         ws2['B4'] = aver
         ws2['C4'] = out_aver
+
+        ws2.merge_cells('B1:C1')
+        ws2.merge_cells('B2:C2')
+        ws2['B1'].fill = self.yellow_color
+        ws2['B2'].fill = self.outlier_color
+        ws2['B2'].font = Font(bold=True, color='FFFFFF')
 
         ws3 = wb['Sheet3']
         ws3['B4'] = aver
@@ -1435,122 +1464,14 @@ class PreShin_UI(QWidget):
         ws3['D4'] = out_aver
         ws3['E4'] = out_std
 
+        # ws3.merge_cells('B1:C1')
+        # ws3.merge_cells('B2:C2')
+        ws3['B1'].fill = self.yellow_color
+        ws3['B2'].fill = self.outlier_color
+        ws3['B2'].font = Font(bold=True, color='FFFFFF')
+
         wb.save(filename=xlsx)
 
 
 if __name__ == "__main__":
-    thin_border = Border(left=borders.Side(style='thin'),
-                         right=borders.Side(style='thin'),
-                         top=borders.Side(style='thin'),
-                         bottom=borders.Side(style='thin'))
-    none_border = Border(left=borders.Side(style=None),
-                         right=borders.Side(style=None),
-                         top=borders.Side(style=None),
-                         bottom=borders.Side(style=None))
-    yellow_color = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-    blue_color = PatternFill(start_color='b3d9ff', end_color='b3d9ff', fill_type='solid')
-    red_color = PatternFill(start_color='ffcccc', end_color='ffcccc', fill_type='solid')
-    white_color = PatternFill(start_color='ffffff', end_color='ffffff', fill_type='solid')
-
-
-    def total_aver_std(xlsx: str):
-        excel_dataframe = pd.read_excel(xlsx, sheet_name='All_detail')
-        excel_dataframe = excel_dataframe.replace(' ', None)
-        excel_dataframe = excel_dataframe[3:-4]
-        excel_dataframe = excel_dataframe.transpose()
-        excel_dataframe = excel_dataframe[2:-4]
-        excel_dataframe = excel_dataframe.transpose()
-
-        outlier_excel_dataframe = excel_dataframe[(excel_dataframe < 5)]
-
-        print('outlier 제거하지 않음')
-        excel_aver, excel_std = aver_std_process(excel_dataframe)
-
-        print('\noutlier 제거')
-        outlier_excel_aver, outlier_excel_std = aver_std_process(outlier_excel_dataframe)
-
-        remake_excel(xlsx, excel_aver, excel_std, outlier_excel_aver, outlier_excel_std)
-
-
-    def aver_std_process(df_excel: pd.DataFrame):
-        df_excel_count = df_excel.count(axis=1)
-        df_excel_count = df_excel_count.sum(axis=0)
-
-        print('총 데이터 개수 :', df_excel_count)
-
-        df_excel_sum = df_excel.sum(axis=1)
-        df_excel_sum = df_excel_sum.sum(axis=0)  # 총 합
-        print('총 합 :', df_excel_sum)
-
-        excel_average = df_excel_sum / df_excel_count
-
-        print('총 평균 :', excel_average)
-
-        # 표준편차 공식 참고
-        df_excel_std = df_excel.sub(excel_average)  # data - 평균
-        df_excel_std = df_excel_std.pow(2)  # 의 제곱
-        df_excel_std = df_excel_std.sum(axis=1)
-        df_excel_std = df_excel_std.sum(axis=0)
-        excel_std = (df_excel_std / df_excel_count) ** (1 / 2)
-        print('총 표준편차 :', excel_std)
-
-        return excel_average, excel_std
-
-
-    def remake_excel(xlsx, aver, std, out_aver, out_std):
-        wb = openpyxl.load_workbook(filename=xlsx)
-        ws1 = wb['All_detail']
-
-        for i in range(4):
-            for j in range(4):
-                ws1.cell(row=ws1.max_row-i, column=ws1.max_column-j).value = ''
-                ws1.cell(row=ws1.max_row - i, column=ws1.max_column - j).fill = white_color
-                ws1.cell(row=ws1.max_row - i, column=ws1.max_column - j).border = none_border
-
-
-        ws1.move_range('C1:F2', cols=13, translate=True)
-        ws1.column_dimensions['C'].width = 13
-
-        ws1['C1'] = '전체 데이터'
-        ws1['C2'] = '최종 결과'
-        ws1['D1'] = 'Aver'
-        ws1['F1'] = 'Std'
-        ws1['H1'] = 'Remove_outlier_Aver'
-        ws1['K1'] = 'Remove_outlier_Std'
-        ws1['D2'] = aver
-        ws1['F2'] = std
-        ws1['H2'] = out_aver
-        ws1['K2'] = out_std
-        ws1.merge_cells('D1:E1')
-        ws1.merge_cells('F1:G1')
-        ws1.merge_cells('H1:J1')
-        ws1.merge_cells('K1:M1')
-        ws1.merge_cells('D2:E2')
-        ws1.merge_cells('F2:G2')
-        ws1.merge_cells('H2:J2')
-        ws1.merge_cells('K2:M2')
-
-        for i in range(2):
-            for j in range(2, 13):
-                ws1.cell(i + 1, j + 1).font = Font(bold=True)
-                ws1.cell(i + 1, j + 1).border = thin_border
-                ws1.cell(i + 1, j + 1).fill = yellow_color
-                ws1.cell(i + 1, j + 1).alignment = Alignment(horizontal='center')
-
-
-        ws2 = wb['보고용']
-        ws2['B4'] = aver
-        ws2['C4'] = out_aver
-
-
-        ws3 = wb['분석용']
-        ws3['B4'] = aver
-        ws3['C4'] = std
-        ws3['D4'] = out_aver
-        ws3['E4'] = out_std
-
-
-        wb.save(filename=xlsx)
-
-
-    total_aver_std(r"D:\내일 진행할 파일들\20230105_ON3DS_PreShinS3D(GMP 제출용 테스트 데이터) - 복사본.xlsx")
+    pass
