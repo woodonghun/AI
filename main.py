@@ -59,15 +59,17 @@ def btn_PreShin_2D_clicked():
     logger.info('btn_PreShin_2D UI end')
 
 
-def btn_vtp_clicked():  # 볼륨템플릿
+def btn_vtp_clicked():  # volume template
     logger.info('Volume_template UI start')
     PreShin.volume_template.Vol_Template_UI()
     logger.info('Volume_template UI end')
 
-def btn_mandibular_clicked():  # 볼륨템플릿
+
+def btn_mandibular_clicked():
     logger.info('mandibular UI start')
     PreShin.Mandibular.Mandibular_UI()
     logger.info('mandibular UI end')
+
 
 def btn_manual_clicked():  # 메뉴얼 오픈
     os.startfile(f'{os.getcwd()}/AI_manual.pdf')

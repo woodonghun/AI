@@ -490,10 +490,10 @@ class Vol_Template:
         else:
             result_outlier = result[result < outlier]  # outlier 값을 버림 ( nan 으로 만듬 )
         result_average = result.mean(axis=1)  # 평균
-        result_std = result.std(axis=1, ddof=0)  # 표준편차
+        result_std = result.std(axis=1, ddof=1)  # 표준편차
 
         result_outlier_average = result_outlier.mean(axis=1)
-        result_outlier_std = result_outlier.std(axis=1, ddof=0)
+        result_outlier_std = result_outlier.std(axis=1, ddof=1)
 
         result_aver_std = pd.DataFrame()  # 환자 측정과 평균,표준편차 df 나눔
         result = result.transpose()  # column, row 전환

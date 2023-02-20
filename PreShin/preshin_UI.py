@@ -305,8 +305,8 @@ class PreShin_UI(QWidget):
     def landmark(self):
         """
         landmark 는 xlsx 을 복사한 txt 파일을 사용 ( 기존 데이터는 복잡해서 변경함 )
-        1   Sella
-        2   N
+        # 1   Sella
+        2
         형식으로 구성
         """
         txt = open(f'{os.getcwd()}/{self.landmark_dat_name}', 'r')
