@@ -9,10 +9,12 @@ from PySide2.QtGui import QDoubleValidator
 from PySide2.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QPushButton, QLabel, QLineEdit, QPlainTextEdit, QFileDialog, QDialog, QMessageBox
 from matplotlib import pyplot as plt
 from openpyxl.drawing.image import Image
-from openpyxl.styles import Border, PatternFill, borders, Font
+from openpyxl.styles import Border, PatternFill, borders, Font, Alignment
 import matplotlib.ticker as mticker
 from PreShin.loggers import logger
-
+'''
+    모든 기준 값은 input 값을 장수로 표현한 것을 기준으로 오차, 평균 등을 구한다.
+'''
 batch = '4'
 rate = '2e-4'
 optimizer = 'adam'
@@ -134,7 +136,7 @@ class Vol_Template_UI(QWidget):
         lbl_xlsx_name.setText('파일명 : ')
         lbl_xlsx.setText('.xlsx')
 
-        # 숫자만 입력, 범위 -> 왜 384까지가 아니라 999가 되는지 모르겠음
+        # 숫자만 입력, 범위 -> 왜 256까지가 아니라 999가 되는지 모르겠음
         double_validator = QDoubleValidator(0.0, 99.0, 2, self)
         double_validator.setNotation(QDoubleValidator.StandardNotation)
         self.edt_error_rate.setValidator(double_validator)  # int 값만 입력가능
@@ -144,11 +146,11 @@ class Vol_Template_UI(QWidget):
         # 장수를 퍼센테지로 변환 할 경우에는 반올림으로 인해서 값의 변동 폭이 있어 그래프가 일치하지 않을 경우가 생김
         self.edt_error_rate.setText(safe_zone_error)
         self.edt_error_rate.textChanged[str].connect(self.lbl_error_changed)
-        self.lbl_error_sheet.setText(str(round((int(self.edt_error_rate.text()) * 384 / 100))))
+        self.lbl_error_sheet.setText(str(round((int(self.edt_error_rate.text()) * 256 / 100))))
 
         self.edt_outlier_rate.setText(outlier_error)
         self.edt_outlier_rate.textChanged[str].connect(self.lbl_outlier_changed)
-        self.lbl_outlier_sheet.setText(str(round((int(self.edt_outlier_rate.text()) * 384 / 100))))
+        self.lbl_outlier_sheet.setText(str(round((int(self.edt_outlier_rate.text()) * 256 / 100))))
 
         btn_manual.setGeometry(20, 10, 100, 20)
         btn_lbl_path.setGeometry(20, 35, 100, 20)
@@ -179,7 +181,7 @@ class Vol_Template_UI(QWidget):
             text = text[1:]
             self.edt_error_rate.setText(text)
 
-        self.lbl_error_sheet.setText(str(round((float(text) * 384 / 100))))
+        self.lbl_error_sheet.setText(str(round((float(text) * 256 / 100))))
 
     # Qlineedit 에 작성된 outlier 값을 변환
     def lbl_outlier_changed(self, text):
@@ -191,7 +193,7 @@ class Vol_Template_UI(QWidget):
             text = text[1:]
             self.edt_outlier_rate.setText(text)
 
-        self.lbl_outlier_sheet.setText(str(round((float(text) * 384 / 100))))
+        self.lbl_outlier_sheet.setText(str(round((float(text) * 256 / 100))))
 
     # label 버튼 클릭 -> 디렉토리 입력
     def btn_lbl_clicked(self):
@@ -242,7 +244,7 @@ class Vol_Template_UI(QWidget):
                             os.mkdir(f'{loc_xlsx}/{self.edt_xlsx_name.text()}')
 
                             vol = Vol_Template()  # class 가져옴
-                            vol.pre_lbl_compare(self.edt_lbl.text(), self.edt_pre.text())  # lbl, pre 폴더에 존재 하는 폴더 목록 비교
+                            # vol.pre_lbl_compare(self.edt_lbl.text(), self.edt_pre.text())  # lbl, pre 폴더에 존재 하는 폴더 목록 비교
                             df_lbl = vol.label(self.edt_lbl.text())  # label loc 읽기
                             df_pre = vol.predict(self.edt_pre.text())  # predict loc 읽기
 
@@ -267,8 +269,8 @@ class Vol_Template_UI(QWidget):
                                                   image_folder_loc=img_folder, file_name=self.edt_xlsx_name.text())
 
                             # ui 에 있는 comment 삽입
-                            self.insert_comment(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', 'Sheet1')
-                            self.insert_comment(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', 'Sheet2')
+                            self.insert_comment(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', '분석용')
+                            self.insert_comment(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', '보고용')
                             messagebox('notice', 'Excel 생성이 완료 되었습니다.')
 
                         else:
@@ -299,13 +301,13 @@ class Vol_Template_UI(QWidget):
         ws.cell(row=2, column=7).value = f'comment : {self.edt.toPlainText()}'
 
         # sheet1 에는 error rate, sheet, accuracy
-        if sheet == 'Sheet1':
+        if sheet == '분석용':
             ws.cell(row=1,
                     column=2).value = f'Safe Error rate : {self.edt_error_rate.text()} %  sheet : {self.lbl_error_sheet.text()} 장  (Accuracy : {100 - int(self.edt_error_rate.text())}%) '
             ws.cell(row=2,
                     column=2).value = f'Remove Outlier Rate : {self.edt_outlier_rate.text()} %  sheet : {self.lbl_outlier_sheet.text()} 장  (Accuracy : {100 - int(self.edt_outlier_rate.text())})%'
 
-        elif sheet == 'Sheet2':
+        elif sheet == '보고용':
             ws.cell(row=1, column=2).value = f'Error Safe Zone : {100 - float(self.edt_error_rate.text())} %  '
             ws.cell(row=2, column=2).value = f'Remove Outlier Rate : {100 - float(self.edt_outlier_rate.text())} %  '
 
@@ -323,7 +325,7 @@ class Vol_Template_UI(QWidget):
 class Vol_Template:
     def __init__(self):
         super().__init__()
-        self.error_number_lbl = list    # label id 폴더 안의 파일 개수가 맞지 않는 id list
+        # self.error_number_lbl = list    # label id 폴더 안의 파일 개수가 맞지 않는 id list
         self.pre_diff = list    # perdict, label 차집합 lsit
         self.lbl_diff = list
         self.accuracy_aver_std = pd.DataFrame()
@@ -364,15 +366,16 @@ class Vol_Template:
             for j in range(len(data_list)):
 
                 if 'hts' in data_list[j]:  # hts
-                    data[1] = int(re.sub(r'[^0-9]', '', data_list[j])) + 128  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
+                    data[2] = (int(re.sub(r'[^0-9]', '', data_list[j])) - 128)/2 + 192  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
                 elif 'sts' in data_list[j]:  # sts
-                    data[2] = int(re.sub(r'[^0-9]', '', data_list[j])) - 128
+                    data[1] = int(re.sub(r'[^0-9]', '', data_list[j])) - 192
                 elif 'air' in data_list[j]:
-                    data[0] = int(re.sub(r'[^0-9]', '', data_list[j]))
+                    data[0] = int(re.sub(r'[^0-9]', '', data_list[j])) / 2
 
             label_dict[i] = data  # dict 에 추가
 
-        df_label = pd.DataFrame(label_dict, index=['Air', 'Hard Tissue', 'Soft Tissue'])
+        df_label = pd.DataFrame(label_dict, index=['Air', 'Soft Tissue', 'Hard Tissue'])
+        print(df_label)
         logger.info('label data transform end')
         return df_label
 
@@ -441,10 +444,10 @@ class Vol_Template:
                     data[k] = float(line_float[0])
 
             predict_dict[predict_id_list[j].split('.')[0]] = data  # dict 에 추가
-        print(predict_dict)
-        df_predict = pd.DataFrame(predict_dict, index=['Air', 'Hard Tissue', 'Soft Tissue'])
-        logger.info('Label Data Transform End')
+        df_predict = pd.DataFrame(predict_dict, index=['Air', 'Soft Tissue', 'Hard Tissue'])
+        df_predict = df_predict*256
         print(df_predict)
+        logger.info('Label Data Transform End')
         return df_predict
 
     def percent(self, lbl: pd.DataFrame, pre: pd.DataFrame, *args) -> pd.DataFrame:  # 퍼센티지의 오차, 셩공률 에 대한 결과 값 함수
@@ -452,17 +455,20 @@ class Vol_Template:
 
         # lbl = 장수 -> 소수점 , pre = 소수점 -> 소수점
         if 'accuracy' in args:
-            lbl_percent = lbl.div(384)  # 나누기
-            lbl_percent = lbl_percent.mul(100)  # 곱
-            pre = pre.mul(100)
-            lbl_percent = lbl_percent.sub(100)
-            pre = pre.sub(100)
-            result_percent = abs(abs(lbl_percent - pre).sub(100))  # 성공 퍼센티지에 대한 결과 lbl-pre 음수 되는 경우 절대값, 100 뺄셈 절대값
+            result_percent = 100-abs(lbl - pre)/256*100
+            print(result_percent)
+            # lbl_percent = lbl.div(256)  # 나누기
+            # lbl_percent = lbl_percent.mul(100)  # 곱
+            # pre = pre.mul(100)
+            # lbl_percent = lbl_percent.sub(100)
+            # pre = pre.sub(100)
+            # result_percent = abs(abs(lbl_percent - pre).sub(100))  # 성공 퍼센티지에 대한 결과 lbl-pre 음수 되는 경우 절대값, 100 뺄셈 절대값
         else:
-            lbl_percent = lbl.div(384)
-            lbl_percent = lbl_percent.mul(100)
-            pre = pre.mul(100)
-            result_percent = abs(lbl_percent - pre)  # 오차 퍼센티지에 대한 결과
+            # lbl_percent = lbl.div(256)
+            # lbl_percent = lbl_percent.mul(100)
+            # pre = pre.mul(100)
+            # result_percent = abs(lbl_percent - pre)  # 오차 퍼센티지에 대한 결과
+            result_percent = abs(lbl - pre)/256*100
 
         result_percent = result_percent[result_percent < 10000]
         result_percent = result_percent.dropna(how='all', axis='columns')
@@ -471,9 +477,7 @@ class Vol_Template:
         return result_percent
 
     def sheet(self, lbl: pd.DataFrame, pre: pd.DataFrame) -> pd.DataFrame:  # 장수 차이에 대한 결과 값
-        # lbl = 장수 -> 장수, pre = 소수점 -> 장수
-        pre_sheet = pre.mul(384).round(0)
-        result_sheet = abs(lbl - pre_sheet)  # 장수에 대한 결과
+        result_sheet = abs(lbl - pre)  # 장수에 대한 결과
         result_sheet = result_sheet[result_sheet < 10000]
 
         result_sheet = result_sheet.dropna(how='all', axis='columns')
@@ -497,8 +501,8 @@ class Vol_Template:
 
         result_aver_std = pd.DataFrame()  # 환자 측정과 평균,표준편차 df 나눔
         result = result.transpose()  # column, row 전환
-        result_aver_std.insert(0, 'Out_Std', result_outlier_std)
-        result_aver_std.insert(0, 'Out_Aver', result_outlier_average)
+        result_aver_std.insert(0, 'Remove_Outlier_Std', result_outlier_std)
+        result_aver_std.insert(0, 'Remove_Outlier_Aver', result_outlier_average)
         result_aver_std.insert(0, 'Std', result_std)
         result_aver_std.insert(0, 'Aver', result_average)
 
@@ -510,26 +514,26 @@ class Vol_Template:
         return result, result_aver_std
 
     # 각각의 폴더에만 존재할 때, label 폴더의 개수가 맞지 않을 때
-    def pre_lbl_compare(self, label_loc: str, predict_loc: str):
-
-        label_id_list = os.listdir(label_loc)  # 환자 list
-        predict_id_list = os.listdir(predict_loc)  # 환자 list
-        self.lbl_diff = list(set(label_id_list) - set(predict_id_list))  # 차집합
-        self.pre_diff = list(set(predict_id_list) - set(label_id_list))
-        self.error_number_lbl = []
-
-        for i in label_id_list:
-            if '.' in i:    # 폴더가 아닌 확장자인 경우에 제외
-                pass
-
-            else:
-                number_lbl = os.listdir(f'{label_loc}/{i}')
-                if len(number_lbl) != 3:
-                    self.error_number_lbl.append(i)
-
-        if len(self.lbl_diff) != 0 or len(self.pre_diff) != 0 or len(self.error_number_lbl) != 0:
-            logger.error(f'label 폴더에 {self.pre_diff}가 없습니다. predict 폴더에 {self.lbl_diff}가 없습니다. ')
-            logger.error(f'label 의 개수가 맞지 않는 폴더가 존재합니다. {self.error_number_lbl} ')
+    # def pre_lbl_compare(self, label_loc: str, predict_loc: str):
+    #
+    #     label_id_list = os.listdir(label_loc)  # 환자 list
+    #     predict_id_list = os.listdir(predict_loc)  # 환자 list
+    #     self.lbl_diff = list(set(label_id_list) - set(predict_id_list))  # 차집합
+    #     self.pre_diff = list(set(predict_id_list) - set(label_id_list))
+    #     self.error_number_lbl = []
+    #
+    #     for i in label_id_list:
+    #         if '.' in i:    # 폴더가 아닌 확장자인 경우에 제외
+    #             pass
+    #
+    #         else:
+    #             number_lbl = os.listdir(f'{label_loc}/{i}')
+    #             if len(number_lbl) != 3:
+    #                 self.error_number_lbl.append(i)
+    #
+    #     if len(self.lbl_diff) != 0 or len(self.pre_diff) != 0 or len(self.error_number_lbl) != 0:
+    #         logger.error(f'label 폴더에 {self.pre_diff}가 없습니다. predict 폴더에 {self.lbl_diff}가 없습니다. ')
+    #         logger.error(f'label 의 개수가 맞지 않는 폴더가 존재합니다. {self.error_number_lbl} ')
 
     # loc : 엑셀 위치, xlsx : 엑셀명, lbl : label dataframe, pre : predict dataframe, percent_outlier : 퍼센티지 이상치, sheet_outlier :  장수 이상치
     def to_xlsx(self, loc: str, xlsx: str, lbl: pd.DataFrame, pre: pd.DataFrame, error_outlier: float, sheet_outlier: int):  # 엑셀 생성, 결과값 삽입
@@ -542,12 +546,12 @@ class Vol_Template:
         sheet_result, self.sheet_aver_std = self.percent_sheet_result(sheet_outlier, self.sheet(lbl, pre), 'sheet')  # 장수 차이
 
         # df 엑셀에 입력
-        accuracy_result.to_excel(writer, startcol=0, startrow=3, sheet_name='Sheet2')
-        self.accuracy_aver_std.to_excel(writer, startcol=5, startrow=3, sheet_name='Sheet2')
-        error_rate_result.to_excel(writer, startcol=0, startrow=3, sheet_name='Sheet1')
-        self.error_rate_aver_std.to_excel(writer, startcol=5, startrow=3, sheet_name='Sheet1')
-        sheet_result.to_excel(writer, startcol=12, startrow=3, sheet_name='Sheet1')
-        self.sheet_aver_std.to_excel(writer, startcol=17, startrow=3, sheet_name='Sheet1')
+        accuracy_result.to_excel(writer, startcol=0, startrow=3, sheet_name='보고용')
+        self.accuracy_aver_std.to_excel(writer, startcol=5, startrow=3, sheet_name='보고용')
+        error_rate_result.to_excel(writer, startcol=0, startrow=3, sheet_name='분석용')
+        self.error_rate_aver_std.to_excel(writer, startcol=5, startrow=3, sheet_name='분석용')
+        sheet_result.to_excel(writer, startcol=12, startrow=3, sheet_name='분석용')
+        self.sheet_aver_std.to_excel(writer, startcol=17, startrow=3, sheet_name='분석용')
         writer.close()
 
         logger.info('make xlsx end')
@@ -589,18 +593,18 @@ class Vol_Template:
         logger.info('Sheet1 Apply Style Start')
 
         wb = openpyxl.load_workbook(filename=f'{loc}/{xlsx}')
-        ws = wb['Sheet1']
+        ws = wb['분석용']
 
-        if len(self.lbl_diff) != 0 or len(self.pre_diff) != 0 or len(self.error_number_lbl) != 0:    # sheet 1 에는 측정되지 않는 값들 입력함
-            ws.cell(row=1, column=16).value = f'label 폴더에 {self.pre_diff}가 없습니다. predict 폴더에 {self.lbl_diff}가 없습니다. '
-            ws.cell(row=1, column=16).font = Font(bold=True)
-            ws.cell(row=2, column=16).value = f'label 의 개수가 맞지 않는 폴더가 존재합니다. {self.error_number_lbl} '
-            ws.cell(row=2, column=16).font = Font(bold=True)
+        # if len(self.lbl_diff) != 0 or len(self.pre_diff) != 0 or len(self.error_number_lbl) != 0:    # sheet 1 에는 측정되지 않는 값들 입력함
+        #     ws.cell(row=1, column=16).value = f'label 폴더에 {self.pre_diff}가 없습니다. predict 폴더에 {self.lbl_diff}가 없습니다. '
+        #     ws.cell(row=1, column=16).font = Font(bold=True)
+        #     ws.cell(row=2, column=16).value = f'label 의 개수가 맞지 않는 폴더가 존재합니다. {self.error_number_lbl} '
+        #     ws.cell(row=2, column=16).font = Font(bold=True)
 
-        ws.cell(row=4, column=1).value = 'Patient_ID'
+        ws.cell(row=4, column=1).value = 'ID/오차율'
         ws.cell(row=4, column=6).value = 'Error Rate'
         ws.cell(row=4, column=6).font = Font(bold=True)
-        ws.cell(row=4, column=13).value = 'Patient_ID'
+        ws.cell(row=4, column=13).value = 'ID/오차장수'
         ws.cell(row=4, column=18).value = 'Sheet'
         ws.cell(row=4, column=18).font = Font(bold=True)
 
@@ -627,7 +631,7 @@ class Vol_Template:
 
         # air, hard tissue, soft tissue 색상
         for column in range(1, ws.max_column + 1):
-            if ws.cell(row=4, column=column).value is not None and ws.cell(row=4, column=column).value != 'Patient_ID':
+            if ws.cell(row=4, column=column).value is not None and ws.cell(row=4, column=column).value != 'ID/오차장수' and ws.cell(row=4, column=column).value != 'ID/오차율':
                 ws.cell(row=4, column=column).fill = self.blue_color
 
         # # patient_id title 색상 뺌
@@ -656,17 +660,17 @@ class Vol_Template:
 
         # 이미지 삽입
         self.graph(self.error_rate_aver_std, 'error_rate', '', loc, error_rate, file_name)
-        self.graph(self.error_rate_aver_std, 'remove_outlier_error_rate', 'Out_', loc, error_rate, file_name)
+        self.graph(self.error_rate_aver_std, 'Remove_Outlier_error_rate', 'Remove_Outlier_', loc, error_rate, file_name)
         self.graph(self.sheet_aver_std, 'sheet', '', loc, sheet_error, file_name)
-        self.graph(self.sheet_aver_std, 'remove_outlier_sheet', 'Out_', loc, sheet_error, file_name)
+        self.graph(self.sheet_aver_std, 'Remove_Outlier_sheet', 'Remove_Outlier_', loc, sheet_error, file_name)
         img_list = os.listdir(f'{loc}/{file_name}_graph_image')
 
         for i in img_list:
             if '.png' in i:
                 img = Image(image_folder_loc + f'/{i}')
-                if i == 'remove_outlier_error_rate.png':
+                if i == 'Remove_Outlier_error_rate.png':
                     ws.add_image(img, 'F23')
-                elif i == 'remove_outlier_sheet.png':
+                elif i == 'Remove_Outlier_sheet.png':
                     ws.add_image(img, 'R23')
                 elif i == 'sheet.png':
                     ws.add_image(img, 'R9')
@@ -679,15 +683,30 @@ class Vol_Template:
         ws.auto_filter.ref = f'A4:D{ws.max_row}'
 
         # column 사이즈
+        # 오차 평균, 표준편차
+        ws.column_dimensions['A'].width = 12
         ws.column_dimensions['B'].width = 14
         ws.column_dimensions['C'].width = 14
         ws.column_dimensions['D'].width = 14
-        ws.column_dimensions['F'].width = 11
+
+        ws.column_dimensions['F'].width = 14
+        ws.column_dimensions['I'].width = 19
+        ws.column_dimensions['J'].width = 19
+        # 장수 평균, 표준편차
+        ws.column_dimensions['M'].width = 12
         ws.column_dimensions['N'].width = 14
         ws.column_dimensions['O'].width = 14
         ws.column_dimensions['P'].width = 14
-        ws.column_dimensions['R'].width = 11
 
+        ws.column_dimensions['R'].width = 14
+        ws.column_dimensions['U'].width = 19
+        ws.column_dimensions['V'].width = 19
+
+        for row in ws[3:ws.max_row]:
+            for cell in row:
+                cell.alignment = Alignment(horizontal='center',vertical='center')
+
+        ws.title = '분석용'
         wb.save(filename=f'{loc}/{xlsx}')
 
         logger.info('Sheet1 Apply Style End')
@@ -700,9 +719,12 @@ class Vol_Template:
         error_rate = abs(error_rate - 100)
 
         wb = openpyxl.load_workbook(filename=f'{loc}/{xlsx}')
-        ws = wb['Sheet2']
+        ws = wb['보고용']
 
-        ws.cell(row=4, column=1).value = 'Patient_ID'
+        ws.cell(row=4, column=1).value = 'ID/정확도'
+        ws.cell(row=4, column=6).value = 'Accuracy'
+        ws.cell(row=4, column=6).font = Font(bold=True)
+
 
         # patient 결과 outlier, error 적용 색상
         for row in range(5, ws.max_row + 1):
@@ -718,7 +740,7 @@ class Vol_Template:
 
         # air, hard tissue, soft tissue 색상
         for column in range(1, ws.max_column + 1):
-            if ws.cell(row=4, column=column).value is not None and ws.cell(row=4, column=column).value != 'Patient_ID':  # 4행 None, patient id 제외
+            if ws.cell(row=4, column=column).value is not None and ws.cell(row=4, column=column).value != 'ID/정확도':  # 4행 None, patient id 제외
                 ws.cell(row=4, column=column).fill = self.blue_color
 
         # 존재하지 않는 값 제외 하고 테두리 적용
@@ -740,13 +762,13 @@ class Vol_Template:
 
         # 이미지 삽입
         self.graph(self.accuracy_aver_std, 'accuracy', '', loc, error_rate, file_name)
-        self.graph(self.accuracy_aver_std, 'remove_outlier_accuracy', 'Out_', loc, error_rate, file_name)
+        self.graph(self.accuracy_aver_std, 'Remove_Outlier_accuracy', 'Remove_Outlier_', loc, error_rate, file_name)
 
         img_list = os.listdir(f'{loc}/{file_name}_graph_image')
         for i in img_list:
             if '.png' in i:    # png 파일 일때만
                 img = Image(image_folder_loc + f'/{i}')
-                if i == 'remove_outlier_accuracy.png':
+                if i == 'remove_Outlier_accuracy.png':
                     ws.add_image(img, 'F23')
                 elif i == 'accuracy.png':
                     ws.add_image(img, 'F9')
@@ -754,10 +776,22 @@ class Vol_Template:
         ws.auto_filter.ref = f'A4:D{ws.max_row}'  # 엑셀 필터 적용
 
         # column 사이즈
+        ws.column_dimensions['A'].width = 12
         ws.column_dimensions['B'].width = 14
         ws.column_dimensions['C'].width = 14
         ws.column_dimensions['D'].width = 14
         ws.column_dimensions['F'].width = 14
+        ws.column_dimensions['M'].width = 12
+        ws.column_dimensions['I'].width = 19
+        ws.column_dimensions['J'].width = 19
+        ws.column_dimensions['U'].width = 19
+        ws.column_dimensions['V'].width = 19
+
+        for row in ws[3:ws.max_row]:
+            for cell in row:
+                cell.alignment = Alignment(horizontal='center',vertical='center')
+
+        ws.title = '보고용'
         wb.save(filename=f'{loc}/{xlsx}')
 
         logger.info('Sheet2 Apply Style End')
