@@ -254,11 +254,11 @@ class PreShin_UI(QWidget):
                 for i in range(len(self.lbl_list)):
                     path, ext = os.path.splitext(self.lbl_list[i])  # 경로, 확장자 분리
 
-                    if ext != '.txt' or ext == '' or ext == '.dat':
-                        messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
-                        logger.error('label file format Error')
-                        self.lbl_lbl.setText('')
-                        break
+                    # if ext != '.txt' or '.dat':
+                    #     messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                    #     logger.error('label file format Error')
+                    #     self.lbl_lbl.setText('')
+                    #     break
 
                     self.lbl_lbl.setText(str(self.lbl_id))
                     # id 안에 있는 landmark 를 landmark.dat 에 있는 num 를 비교후 저장
@@ -285,11 +285,11 @@ class PreShin_UI(QWidget):
                 for i in range(len(self.pre_list)):
                     path, ext = os.path.splitext(self.pre_list[i])  # 경로, 확장자 분리
 
-                    if ext != '.txt' or ext == '' or ext == '.dat':
-                        messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
-                        logger.error('label file format Error')
-                        self.lbl_pre.setText('')
-                        break
+                    # if ext != '.txt' or '.dat':
+                    #     messagebox('Warning', '폴더안 파일의 형식이 올바르지 않습니다. 폴더를 확인하세요.')
+                    #     logger.error('label file format Error')
+                    #     self.lbl_pre.setText('')
+                    #     break
 
                     self.lbl_pre.setText(str(self.pre_id))
             else:
@@ -464,7 +464,7 @@ class PreShin_UI(QWidget):
                         wb.save(self.new_xlsx)
 
                         self.sheet2_value()  # sheet2 landmark name 설정
-
+                        df_landmark = pd.DataFrame()
                         for i in range(len(self.id_list)):  # 환자 수 만큼 만들고 df 합침
                             name = self.id_list[i].split('/')  # 환자 번호
 
@@ -510,6 +510,7 @@ class PreShin_UI(QWidget):
                         df_sheet_outlier = df_sheet[df_sheet < float(self.edt_outlier.text())]
                         aver_outlier = average(df_sheet_outlier)
                         df_sheet_outlier['Aver'] = df_sheet_outlier.mean(axis=1)
+                        print(df_landmark, df_sheet_outlier)
                         df_result_outlier = pd.concat([df_landmark, df_sheet_outlier], axis=1)
 
                         # 평균값 만들어서 landmark 와 합침
@@ -1447,6 +1448,8 @@ class PreShin_UI(QWidget):
         ws1['P1'].fill = self.yellow_color
         ws1['P2'].fill = self.outlier_color
         ws1['p2'].font = Font(bold=True, color='FFFFFF')
+
+        ws1.freeze_panes = 'C5'
 
         ws2 = wb['Sheet2']
         ws2['B4'] = aver

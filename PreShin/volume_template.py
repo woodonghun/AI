@@ -12,6 +12,7 @@ from openpyxl.drawing.image import Image
 from openpyxl.styles import Border, PatternFill, borders, Font, Alignment
 import matplotlib.ticker as mticker
 from PreShin.loggers import logger
+
 '''
     모든 기준 값은 input 값을 장수로 표현한 것을 기준으로 오차, 평균 등을 구한다.
 '''
@@ -23,9 +24,11 @@ comment = 'write comment'
 safe_zone_error = '2'
 outlier_error = '4'
 
-error_rate_range = 10    # 축 범위 변경.
+error_rate_range = 10  # 축 범위 변경.
 sheet_range = 40
 accuracy_range = 100
+
+
 # 엑셀 필터 기능이 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
 
 # 필요한 predict 파일 : air, sts, hts 정보가 들어있는 predict txt 파일 폴더들
@@ -293,6 +296,7 @@ class Vol_Template_UI(QWidget):
     def insert_comment(self, loc: str, xlsx: str, sheet: str):  # comment 삽입
         wb = openpyxl.load_workbook(filename=f'{loc}/{xlsx}')
         ws = wb[sheet]
+        ws.insert_rows(1)
         # table 에 default 값 출력
         ws.cell(row=1, column=7).value = f'Hyperparameter Batch size = {self.table.item(0, 1).text()}' \
                                          f', Learning rate = {self.table.item(1, 1).text()}' \
@@ -303,19 +307,42 @@ class Vol_Template_UI(QWidget):
         # sheet1 에는 error rate, sheet, accuracy
         if sheet == '분석용':
             ws.cell(row=1,
-                    column=2).value = f'Safe Error rate : {self.edt_error_rate.text()} %  sheet : {self.lbl_error_sheet.text()} 장  (Accuracy : {100 - int(self.edt_error_rate.text())}%) '
+                    column=2).value = f'Safe Zone : 0 ~ {self.edt_error_rate.text()} %  ' \
+                                      f'sheet : 0 ~ {self.lbl_error_sheet.text()} 장  ' \
+                                      f'(Accuracy : {100 - float(self.edt_error_rate.text())} ~ 100.0 % '
             ws.cell(row=2,
-                    column=2).value = f'Remove Outlier Rate : {self.edt_outlier_rate.text()} %  sheet : {self.lbl_outlier_sheet.text()} 장  (Accuracy : {100 - int(self.edt_outlier_rate.text())})%'
+                    column=2).value = f'Error Safe Zone : {self.edt_error_rate.text()} ~ {self.edt_outlier_rate.text()} %  ' \
+                                      f'sheet : {self.lbl_error_sheet.text()} ~ {self.lbl_outlier_sheet.text()} 장   ' \
+                                      f'(Accuracy : {100 - float(self.edt_outlier_rate.text())} ~ {100 - float(self.edt_error_rate.text())}%) '
+            ws.cell(row=3,
+                    column=2).value = f'Remove Outlier Rate : {self.edt_outlier_rate.text()} ~ %  ' \
+                                      f'sheet : {self.lbl_outlier_sheet.text()} ~ 장  ' \
+                                      f'(Accuracy : ~ {100 - float(self.edt_outlier_rate.text())})%'
 
         elif sheet == '보고용':
-            ws.cell(row=1, column=2).value = f'Error Safe Zone : {100 - float(self.edt_error_rate.text())} %  '
-            ws.cell(row=2, column=2).value = f'Remove Outlier Rate : {100 - float(self.edt_outlier_rate.text())} %  '
+            ws.cell(row=1, column=2).value = f'Safe Zon : {100 - float(self.edt_error_rate.text())} ~ 100.0 %  '
+            ws.cell(row=2, column=2).value = f'Error Safe Zone : {100 - float(self.edt_outlier_rate.text())} ~ {100 - float(self.edt_error_rate.text())} %  '
+            ws.cell(row=3, column=2).value = f'Remove Outlier Rate : ~ {100 - float(self.edt_outlier_rate.text())} %  '
 
-        ws.cell(row=1, column=1).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')    # 색상 노랑
-        ws.cell(row=2, column=1).fill = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')    # 빨강
+        ws.cell(row=2, column=1).fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')  # 색상 노랑
+        ws.cell(row=3, column=1).fill = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')  # 빨강
 
-        ws.cell(row=1, column=2).font = Font(bold=True)     # 글씨 굵게
+        ws.cell(row=1, column=1).border = Border(left=borders.Side(style='thin'),
+                                                 right=borders.Side(style='thin'),
+                                                 top=borders.Side(style='thin'),
+                                                 bottom=borders.Side(style='thin'))
+        ws.cell(row=2, column=1).border = Border(left=borders.Side(style='thin'),
+                                                 right=borders.Side(style='thin'),
+                                                 top=borders.Side(style='thin'),
+                                                 bottom=borders.Side(style='thin'))
+        ws.cell(row=3, column=1).border = Border(left=borders.Side(style='thin'),
+                                                 right=borders.Side(style='thin'),
+                                                 top=borders.Side(style='thin'),
+                                                 bottom=borders.Side(style='thin'))
+
+        ws.cell(row=1, column=2).font = Font(bold=True)  # 글씨 굵게
         ws.cell(row=2, column=2).font = Font(bold=True)
+        ws.cell(row=3, column=2).font = Font(bold=True)
         ws.cell(row=1, column=7).font = Font(bold=True)
         ws.cell(row=2, column=7).font = Font(bold=True)
 
@@ -326,7 +353,7 @@ class Vol_Template:
     def __init__(self):
         super().__init__()
         # self.error_number_lbl = list    # label id 폴더 안의 파일 개수가 맞지 않는 id list
-        self.pre_diff = list    # perdict, label 차집합 lsit
+        self.pre_diff = list  # perdict, label 차집합 lsit
         self.lbl_diff = list
         self.accuracy_aver_std = pd.DataFrame()
         self.sheet_aver_std = pd.DataFrame()
@@ -366,11 +393,16 @@ class Vol_Template:
             for j in range(len(data_list)):
 
                 if 'hts' in data_list[j]:  # hts
-                    data[2] = (int(re.sub(r'[^0-9]', '', data_list[j])) - 128)/2 + 192  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
+                    # data[2] = (int(re.sub(r'[^0-9]', '', data_list[j])) - 128)/2 + 192  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
+                    data[2] = int(re.sub(r'[^0-9]', '', data_list[j]))  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
+
                 elif 'sts' in data_list[j]:  # sts
-                    data[1] = int(re.sub(r'[^0-9]', '', data_list[j])) - 192
+                    # data[1] = int(re.sub(r'[^0-9]', '', data_list[j])) - 192
+                    data[1] = int(re.sub(r'[^0-9]', '', data_list[j]))
+
                 elif 'air' in data_list[j]:
-                    data[0] = int(re.sub(r'[^0-9]', '', data_list[j])) / 2
+                    # data[0] = int(re.sub(r'[^0-9]', '', data_list[j])) / 2
+                    data[0] = int(re.sub(r'[^0-9]', '', data_list[j]))
 
             label_dict[i] = data  # dict 에 추가
 
@@ -429,7 +461,7 @@ class Vol_Template:
 
         for j in range(len(predict_id_list)):
             data = [0, 0, 0]
-            txt = open(f'{loc}/{predict_id_list[j]}', 'r')
+            txt = open(f'{loc}/{predict_id_list[j]}', 'r', encoding='UTF8')
             lines = txt.readlines()  # txt 한줄씩 읽기
 
             for k in range(len(lines)):
@@ -441,11 +473,25 @@ class Vol_Template:
                     data[k] = -999999
 
                 else:
-                    data[k] = float(line_float[0])
+                    if line[0] == 'air':
+                        data[0] = float(line_float[0])
+                    elif line[0] == 'hard tissue':
+                        data[2] = float(line_float[0])
+                    elif line[0] == 'soft tissue':
+                        data[1] = float(line_float[0])
 
             predict_dict[predict_id_list[j].split('.')[0]] = data  # dict 에 추가
         df_predict = pd.DataFrame(predict_dict, index=['Air', 'Soft Tissue', 'Hard Tissue'])
-        df_predict = df_predict*256
+        # df_predict = df_predict*256
+        print(df_predict)
+        df_predict.loc['Air'] = df_predict.loc['Air'] * 128
+
+        df_predict.loc['Soft Tissue'] = df_predict.loc['Soft Tissue'] * 128
+        df_predict.loc['Soft Tissue'] = df_predict.loc['Soft Tissue'].add(256)
+
+        df_predict.loc['Hard Tissue'] = df_predict.loc['Hard Tissue'] * 128
+        df_predict.loc['Hard Tissue'] = df_predict.loc['Hard Tissue'].add(128)
+
         print(df_predict)
         logger.info('Label Data Transform End')
         return df_predict
@@ -455,7 +501,7 @@ class Vol_Template:
 
         # lbl = 장수 -> 소수점 , pre = 소수점 -> 소수점
         if 'accuracy' in args:
-            result_percent = 100-abs(lbl - pre)/256*100
+            result_percent = 100 - abs(lbl - pre) / 384 * 100
             print(result_percent)
             # lbl_percent = lbl.div(256)  # 나누기
             # lbl_percent = lbl_percent.mul(100)  # 곱
@@ -468,7 +514,7 @@ class Vol_Template:
             # lbl_percent = lbl_percent.mul(100)
             # pre = pre.mul(100)
             # result_percent = abs(lbl_percent - pre)  # 오차 퍼센티지에 대한 결과
-            result_percent = abs(lbl - pre)/256*100
+            result_percent = abs(lbl - pre) / 384 * 100
 
         result_percent = result_percent[result_percent < 10000]
         result_percent = result_percent.dropna(how='all', axis='columns')
@@ -669,13 +715,13 @@ class Vol_Template:
             if '.png' in i:
                 img = Image(image_folder_loc + f'/{i}')
                 if i == 'Remove_Outlier_error_rate.png':
-                    ws.add_image(img, 'F23')
+                    ws.add_image(img, 'F24')
                 elif i == 'Remove_Outlier_sheet.png':
-                    ws.add_image(img, 'R23')
+                    ws.add_image(img, 'R24')
                 elif i == 'sheet.png':
-                    ws.add_image(img, 'R9')
+                    ws.add_image(img, 'R10')
                 elif i == 'error_rate.png':
-                    ws.add_image(img, 'F9')
+                    ws.add_image(img, 'F10')
 
         # 엑셀 필터 적용 ------------------------------------------------------- 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
         # https://openpyxl.readthedocs.io/en/stable/filters.html 공식 사이트
@@ -702,9 +748,12 @@ class Vol_Template:
         ws.column_dimensions['U'].width = 19
         ws.column_dimensions['V'].width = 19
 
+        ws['A3'] = '단위 : %'
+        ws['M3'] = '단위 : 장수'
+
         for row in ws[3:ws.max_row]:
             for cell in row:
-                cell.alignment = Alignment(horizontal='center',vertical='center')
+                cell.alignment = Alignment(horizontal='center', vertical='center')
 
         ws.title = '분석용'
         wb.save(filename=f'{loc}/{xlsx}')
@@ -725,7 +774,6 @@ class Vol_Template:
         ws.cell(row=4, column=6).value = 'Accuracy'
         ws.cell(row=4, column=6).font = Font(bold=True)
 
-
         # patient 결과 outlier, error 적용 색상
         for row in range(5, ws.max_row + 1):
 
@@ -733,7 +781,7 @@ class Vol_Template:
                 self.accept_outlier_error_sh2(ws, row, column, error_rate, error_outlier)
 
             for column in [7, 9]:  # error aver_std
-                if ws.cell(row=row, column=column).value is None:    # 빈 값은 pass
+                if ws.cell(row=row, column=column).value is None:  # 빈 값은 pass
                     pass
                 else:
                     self.accept_outlier_error_sh2(ws, row, column, error_rate, error_outlier)
@@ -766,12 +814,12 @@ class Vol_Template:
 
         img_list = os.listdir(f'{loc}/{file_name}_graph_image')
         for i in img_list:
-            if '.png' in i:    # png 파일 일때만
+            if '.png' in i:  # png 파일 일때만
                 img = Image(image_folder_loc + f'/{i}')
                 if i == 'remove_Outlier_accuracy.png':
-                    ws.add_image(img, 'F23')
+                    ws.add_image(img, 'F24')
                 elif i == 'accuracy.png':
-                    ws.add_image(img, 'F9')
+                    ws.add_image(img, 'F10')
 
         ws.auto_filter.ref = f'A4:D{ws.max_row}'  # 엑셀 필터 적용
 
@@ -789,7 +837,9 @@ class Vol_Template:
 
         for row in ws[3:ws.max_row]:
             for cell in row:
-                cell.alignment = Alignment(horizontal='center',vertical='center')
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+
+        ws['A3'] = '단위 : %'
 
         ws.title = '보고용'
         wb.save(filename=f'{loc}/{xlsx}')
@@ -804,17 +854,17 @@ class Vol_Template:
 
         fig = plt.figure(figsize=(5, 3))  # Figure 생성 사이즈
         ax = fig.add_subplot()  # Axes 추가
-        colors = ['#c1f0c1', '#c1f0c1', '#c1f0c1']    # 초록색
+        colors = ['#c1f0c1', '#c1f0c1', '#c1f0c1']  # 초록색
         xtick_label_position = list(range(len(list(graph.index))))  # x 축에 글시 넣을 위치
 
-        if 'accuracy' in title:    # 성공률 일때 적용
+        if 'accuracy' in title:  # 성공률 일때 적용
             for j in range(len(list(graph.index))):
-                if float(graph_dict[f'{outlier}Aver'][j]) <= float(error_line):    # error_line 값보다 낮으면 색변환 // 성공률 낮으면~
+                if float(graph_dict[f'{outlier}Aver'][j]) <= float(error_line):  # error_line 값보다 낮으면 색변환 // 성공률 낮으면~
                     colors[j] = '#FFCCCC'  # error 빨강
 
         else:
             for j in range(len(list(graph.index))):
-                if float(graph_dict[f'{outlier}Aver'][j]) >= float(error_line):    # error_line 값보다 낮으면 색변환 // 오차율 높으면~
+                if float(graph_dict[f'{outlier}Aver'][j]) >= float(error_line):  # error_line 값보다 낮으면 색변환 // 오차율 높으면~
                     colors[j] = '#FFCCCC'  # error 빨강
 
         if 'error_rate' in title:  # sheet 와 error 에 따른 축 범위 변경
@@ -829,7 +879,12 @@ class Vol_Template:
         plt.xticks(xtick_label_position, list(graph.index))  # x 축에 삽입
         plt.axhline(y=float(error_line), color='red', linestyle='--')  # error 라인 그리기
         bars = plt.bar(xtick_label_position, graph_dict[f'{outlier}Aver'], color=colors, edgecolor='black')  # 그래프 생성
-        plt.title(title, fontsize=10)  # 타이틀 입력
+
+        if 'error_rate' in title or 'accuracy' in title:
+            plt.title(f'{title}(Unit : %)', fontsize=10)  # 타이틀 입력
+        else:
+            plt.title(f'error(Unit : {title})', fontsize=10)  # 타이틀 입력
+
         plt.errorbar(x=list(graph.index), y=graph_dict[f'{outlier}Aver'], yerr=np.array(graph_dict[f'{outlier}Std']) / 2, color='black', ecolor='black', fmt='.',
                      alpha=0.5, elinewidth=2)  # 에러바 삽입
 
