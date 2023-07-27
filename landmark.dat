@@ -1,0 +1,181 @@
+1	N
+2	Sella
+3	R FZP
+4	L FZP
+5	R Or
+6	L Or
+7	R Po
+8	L Po
+190	PoMP
+9	R TFP
+10	L TFP
+11	Basion
+126	R Cd-C
+127	R Cd-L Pole
+128	R Cd-M Pole
+130	R GF-L
+195	R Cd-L
+132	R C GF-S
+129	R C Cd-S
+131	R GF-M
+196	R Cd-M
+139	L Cd-C
+140	L Cd-L Pole
+141	L Cd-M Pole
+143	L GF-L
+197	L Cd-L
+145	L C GF-S
+142	L C Cd-S
+144	L GF-M
+198	L Cd-M
+136	R GF-A
+133	R Cd-A
+138	R S GF-S
+135	R S Cd-S
+137	R GF-P
+134	R Cd-P
+149	L GF-A
+146	L Cd-A
+151	L S GF-S
+148	L S Cd-S
+150	L GF-P
+147	L Cd-P
+12	R KRP
+13	L KRP
+14	ANS
+15	PNS
+18	A
+152	R Ant. Zygoma
+153	L Ant. Zygoma
+154	R Zygion
+155	L Zygion
+19	B
+21	Pog
+22	Gn
+23	Me
+28	R CP Point
+29	L CP Point
+32	R Sigmoid notch
+33	L Sigmoid notch
+34	R Anterior ramal point
+35	L Anterior ramal point
+36	R Post Go
+37	L Post Go
+38	R Go
+39	L Go
+40	R Inf Go
+41	L Inf Go
+191	R Lingula
+192	L Lingula
+193	R Mental foramen
+194	L Mental foramen
+125	Base of Epiglottis
+42	U1MP
+43	R U1CP
+44	R U1RP
+47	R U3CP
+48	R U3RP
+51	R U6CP
+52	R U6RP
+45	L U1CP
+46	L U1RP
+49	L U3CP
+50	L U3RP
+53	L U6CP
+54	L U6RP
+55	U6MP
+56	L1MP
+57	R L1CP
+58	R L1RP
+61	R L3CP
+62	R L3RP
+65	R L6CP
+66	R L6RP
+59	L L1CP
+60	L L1RP
+63	L L3CP
+64	L L3RP
+67	L L6CP
+68	L L6RP
+69	L6MP
+80	R U2CP
+81	R U2RP
+84	R U4CP
+85	R U4RP
+88	R U5CP
+89	R U5RP
+92	R U7CP
+93	R U7RP
+112	R U8CP
+113	R U8RP
+82	L U2CP
+83	L U2RP
+86	L U4CP
+87	L U4RP
+90	L U5CP
+91	L U5RP
+94	L U7CP
+95	L U7RP
+114	L U8CP
+115	L U8RP
+96	R L2CP
+97	R L2RP
+100	R L4CP
+101	R L4RP
+104	R L5CP
+105	R L5RP
+108	R L7CP
+109	R L7RP
+116	R L8CP
+117	R L8RP
+98	L L2CP
+99	L L2RP
+102	L L4CP
+103	L L4RP
+106	L L5CP
+107	L L5RP
+110	L L7CP
+111	L L7RP
+118	L L8CP
+119	L L8RP
+120	S Glabella
+121	S Nasion
+156	R Endocanthion
+157	L Endocanthion
+158	R Exocanthion
+159	L Exocanthion
+187	S Rhinion
+162	R S Zygion
+163	L S Zygion
+122	Pronasale
+71	Columella
+72	Subnasale
+164	R Alar
+165	L Alar
+182	Superior Sulcus
+166	Labiale Superius
+167	R Crista Philtri
+168	L Crista Philtri
+73	Upper lip
+70	Stomion superius
+169	R Cheilion
+170	L Cheilion
+123	Lower lip
+171	Labiale Inferius
+124	Mentolabial Sulcus
+74	S Pogonion
+188	S Gn
+183	S Menton
+189	CNJ
+172	R S Go
+173	L S Go
+79	PTM
+30	R Ar
+31	L Ar
+184	DC [Ricketts]
+185	Xi [Ricketts]
+186	Pm [Ricketts]
+77	Soft palate
+75	Upper pharynx
+78	TM point
+76	Lower pharynx

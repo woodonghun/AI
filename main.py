@@ -5,6 +5,8 @@ import PreShin.preshin_UI_2d
 import PreShin.preshin_UI
 import PreShin.volume_template
 import PreShin.Mandibular
+import PreShin.tooth
+
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
 
@@ -71,6 +73,12 @@ def btn_mandibular_clicked():
     logger.info('mandibular UI end')
 
 
+def btn_tooth_clicked():
+    logger.info('tooth UI start')
+    PreShin.tooth.Tooth_UI()
+    logger.info('tooth UI end')
+
+
 def btn_manual_clicked():  # 메뉴얼 오픈
     os.startfile(f'{os.getcwd()}/AI_manual.pdf')
 
@@ -102,6 +110,11 @@ class Main(QWidget):
         btn_mandibular.setText("Mandibular")
         btn_mandibular.setGeometry(20, 135, 120, 20)
         btn_mandibular.clicked.connect(btn_mandibular_clicked)
+
+        btn_tooth = QPushButton(self)
+        btn_tooth.setText("Tooth")
+        btn_tooth.setGeometry(20, 160, 120, 20)
+        btn_tooth.clicked.connect(btn_tooth_clicked)
 
         btn_manual = QPushButton(self)
         btn_manual.setText("Manual Open")

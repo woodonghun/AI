@@ -13,9 +13,9 @@ from openpyxl.styles import Border, PatternFill, borders, Font, Alignment
 import matplotlib.ticker as mticker
 from PreShin.loggers import logger
 
-'''
+"""
     모든 기준 값은 input 값을 장수로 표현한 것을 기준으로 오차, 평균 등을 구한다.
-'''
+"""
 batch = '4'
 rate = '2e-4'
 optimizer = 'adam'
@@ -468,7 +468,7 @@ class Vol_Template:
                 line = lines[k].split(',')  # air,0.35156316 형식, 숫자만 남김
                 line_float = line[1].split('\n')
 
-                if float(line_float[0]) >= 1:
+                if float(line_float[0]) > 1:
                     logger.error(f'predict {j} 폴더의 data 값이 올바르지 않습니다 {line}')  # dat 1이상 값은 없음 error 추가
                     data[k] = -999999
 
@@ -726,7 +726,7 @@ class Vol_Template:
         # 엑셀 필터 적용 ------------------------------------------------------- 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
         # https://openpyxl.readthedocs.io/en/stable/filters.html 공식 사이트
         # 필터 자체를 생성 하는 것은 적용되지만, 생성과 동시에 필터를 적용되지 않는다.
-        ws.auto_filter.ref = f'A4:D{ws.max_row}'
+        ws.auto_filter.ref = f'A5:D{ws.max_row}'
 
         # column 사이즈
         # 오차 평균, 표준편차
@@ -821,7 +821,7 @@ class Vol_Template:
                 elif i == 'accuracy.png':
                     ws.add_image(img, 'F10')
 
-        ws.auto_filter.ref = f'A4:D{ws.max_row}'  # 엑셀 필터 적용
+        ws.auto_filter.ref = f'A5:D{ws.max_row}'  # 엑셀 필터 적용
 
         # column 사이즈
         ws.column_dimensions['A'].width = 12

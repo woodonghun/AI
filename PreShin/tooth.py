@@ -27,12 +27,8 @@ rate = '2e-4'
 optimizer = 'adam'
 aug = '0'
 comment = 'write comment'
-safe_zone_error = '0.5'
-outlier_error = '0.7'
-
-error_rate_range = 10  # 축 범위 변경.
-sheet_range = 40
-accuracy_range = 100
+safe_zone_error = '0.15'
+outlier_error = '0.3'
 
 predict_file = '.nrrd'
 label_file = '.nrrd'
@@ -174,7 +170,6 @@ class Tooth_UI(QWidget):
         self.rdbtn_iou.setGeometry(220, 215, 120, 30)
 
     def radiobutton_clicked(self):
-
         if self.rdbtn_diceloss.isChecked():
             self.edt_error_rate.setText(safe_zone_error)
             self.edt_outlier_rate.setText(outlier_error)
@@ -246,18 +241,18 @@ class Tooth_UI(QWidget):
                             dict_lbl = tooth.save_data_root(self.edt_lbl.text())  # label loc 읽기
                             dict_pre = tooth.save_data_root(self.edt_pre.text())  # predict loc 읽기
 
-                            # diceloss_dataframe = tooth.make_dice_loss_dataframe(dict_pre, dict_lbl)   # 데이터 불러오기
+                            diceloss_dataframe = tooth.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
 
-                            data = {'LL1': 0.0, 'LL2': 1.0, 'LL3': 0.7, 'LL4': 0.4, 'LL5': 0.3, 'LL6': 0.1, 'LL7': 0.0, 'LL8': 0.0,
-                                    'LU1': 1.0, 'LU2': 1.0, 'LU3': 1.0, 'LU4': 1.0, 'LU5': 1.0, 'LU6': 1.0, 'LU7': 1.0, 'LU8': 0.0,
-                                    'RL1': 0.0, 'RL2': 1.0, 'RL3': 1.0, 'RL4': 0.3, 'RL5': 0.0, 'RL6': 1.0, 'RL7': 1.0, 'RL8': 0.3,
-                                    'RU1': 1.0, 'RU2': 1.0, 'RU3': 1.0, 'RU4': 1.0, 'RU5': None, 'RU6': 1.0, 'RU7': 1.0, 'RU8': 1.0}
-                            temp1 = pd.DataFrame.from_dict(data=data, orient='index', columns=['2'])
-                            temp2 = pd.DataFrame.from_dict(data=data, orient='index', columns=['5']) * 0.5
-                            temp3 = pd.DataFrame.from_dict(data=data, orient='index', columns=['7']) * 0.3
+                            # data = {'LL1': 0.94, 'LL2': 1.0, 'LL3': 0.7, 'LL4': 0.4, 'LL5': 0.3, 'LL6': 0.1, 'LL7': 0.12, 'LL8': 0.88,
+                            #         'LU1': 1.0, 'LU2': 0.32, 'LU3': 0.5, 'LU4': 0.78, 'LU5': 1.0, 'LU6': 1.0, 'LU7': 1.0, 'LU8': 0.0,
+                            #         'RL1': 0.6, 'RL2': 1.0, 'RL3': 0.5, 'RL4': 0.3, 'RL5': 0.0, 'RL6': 0.35, 'RL7': 1.0, 'RL8': 0.3,
+                            #         'RU1': 0.3, 'RU2': 0.9, 'RU3': 1.0, 'RU4': 1.0, 'RU5': None, 'RU6': 0.08, 'RU7': 0.9, 'RU8': 1.0}
+                            # temp1 = pd.DataFrame.from_dict(data=data, orient='index', columns=['2'])
+                            # temp2 = pd.DataFrame.from_dict(data=data, orient='index', columns=['5']) * 0.5
+                            # temp3 = pd.DataFrame.from_dict(data=data, orient='index', columns=['7']) * 0.3
 
-                            diceloss_dataframe = pd.concat([temp1, temp2], axis=1)
-                            diceloss_dataframe = pd.concat([diceloss_dataframe, temp3], axis=1)
+                            # diceloss_dataframe = pd.concat([temp1, temp2], axis=1)
+                            # diceloss_dataframe = pd.concat([diceloss_dataframe, temp3], axis=1)
 
                             # 엑셀 생성
                             tooth.to_xlsx(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', diceloss_dataframe,
@@ -314,8 +309,10 @@ class Tooth_UI(QWidget):
                                              f', optimizer = {self.table.item(2, 1).text()}' \
                                              f', aug = {self.table.item(3, 1).text()} '
             ws.cell(row=2, column=6).value = f'comment : {self.edt.toPlainText()}'
+            ws.cell(row=4, column=6).value = f'mode : {Tooth_UI.mode}'
             ws.cell(row=1, column=6).font = Font(bold=True)
             ws.cell(row=2, column=6).font = Font(bold=True)
+            ws.cell(row=4, column=6).font = Font(bold=True)
         else:
             col = 14
 
@@ -325,8 +322,10 @@ class Tooth_UI(QWidget):
                                               f', optimizer = {self.table.item(2, 1).text()}' \
                                               f', aug = {self.table.item(3, 1).text()} '
             ws.cell(row=2, column=20).value = f'comment : {self.edt.toPlainText()}'
+            ws.cell(row=3, column=20).value = f'mode : {Tooth_UI.mode}'
             ws.cell(row=1, column=20).font = Font(bold=True)
             ws.cell(row=2, column=20).font = Font(bold=True)
+            ws.cell(row=3, column=20).font = Font(bold=True)
 
         if Tooth_UI.mode == 'diceloss':
             range_safe_zone = '0.0'
@@ -394,6 +393,15 @@ class Tooth:
         self.outlier_color = PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')
         self.white_color = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
 
+    def compare(self, operator, a, b):
+        result = False
+        if operator == '<':
+            result = a < b
+        elif operator == '>':
+            result = a > b
+
+        return result
+
     def save_data_root(self, loc: str):  # 정답 기준
         """
         data 의 주소와 id, 치아 파일명을 dict 형태로 저장
@@ -435,11 +443,17 @@ class Tooth:
         """
         logger.info(f'make dice loss dataframe start')
 
-        diceloss_result = pd.DataFrame(index=self.tooth_name)  # tooth name 정보가 column name 으로 저장된 빈 dataframe 생성
-        diceloss_data = {}
+        cal_result = pd.DataFrame(index=self.tooth_name)  # tooth name 정보가 column name 으로 저장된 빈 dataframe 생성
+        data = {}
+        print(f'Total Num ID = {len(list(label_data.keys())) - 1}')
+        count = 0
+
         for key in list(label_data.keys()):
+
             if key != 'loc':
-                for value in tqdm(label_data[key]):
+                count += 1
+                print(f'Now : {count}, id : {key}')
+                for value in tqdm(label_data[key], desc='Num_tooth'):
                     if '#' not in value:
                         continue
                     elif value in predict_data[key]:
@@ -447,22 +461,22 @@ class Tooth:
                         lbl = rf'{label_data["loc"]}/{value}{label_file}'
                         result = self.calculate(pre, lbl)
                         if '_' in value:
-                            diceloss_data[value.split('#')[1].split('_')[0]] = result
+                            data[value.split('#')[1].split('_')[0]] = result
                         else:
-                            diceloss_data[value.split('#')[1]] = result
+                            data[value.split('#')[1]] = result
                     else:
                         logger.error('label, predict nrrd data not equal')
 
-                id_result_diceloss = pd.DataFrame.from_dict(data=diceloss_data, orient='index', columns=[key])
+                id_result_diceloss = pd.DataFrame.from_dict(data=data, orient='index', columns=[key])
 
-                diceloss_result = pd.concat([diceloss_result, id_result_diceloss], axis=1)
+                cal_result = pd.concat([cal_result, id_result_diceloss], axis=1)
 
         logger.info(f'make dice loss dataframe end ')
-        return diceloss_result
+        return cal_result
 
     def calculate(self, pre_nrrd: str, lbl_nrrd: str):
         """
-        diceloss 계산
+        dice, dieceloss, iou 계산
         :param pre_nrrd: predict nrrd 주소
         :param lbl_nrrd: label nrrd 주소
         :return: diceloss 값
@@ -516,7 +530,18 @@ class Tooth:
 
         dice_loss = 1 - dice
 
-        return dice_loss
+        if self.get_mode == 'diceloss':
+            self.operator = '>'
+            self.reverse_operator = '<'
+            return dice_loss
+        elif self.get_mode == 'iou':
+            self.operator = '<'
+            self.reverse_operator = '>'
+            return iou
+        elif self.get_mode == 'dice':
+            self.operator = '<'
+            self.reverse_operator = '>'
+            return dice
 
     def aver_std_process(self, diceloss: pd.DataFrame):
         diceloss_count = diceloss.count(axis=1)
@@ -547,7 +572,10 @@ class Tooth:
 
         writer = pd.ExcelWriter(f'{loc}/{xlsx}', engine='openpyxl')  # pandas 엑셀 작성
 
-        outlier_result = eval(f'result[result {self.reverse_operator} error_outlier]')
+        if self.reverse_operator == '<':
+            outlier_result = result[result < error_outlier]
+        else:
+            outlier_result = result[result > error_outlier]
 
         self.aver, self.std = self.aver_std_process(result)
         self.out_aver, self.out_std = self.aver_std_process(outlier_result)
@@ -609,7 +637,7 @@ class Tooth:
         total.index = ['Total']
         df_for_std_graph = pd.concat([total, column_aver_std])
 
-        df_for_std_graph = df_for_std_graph.replace(to_replace=-99999, value=-0.02).round(2)
+        df_for_std_graph = df_for_std_graph.replace(to_replace=-99999, value=-0.02).round(3)
 
         self.graph(df_for_std_graph, loc, xlsx, error_rate)
         self.std_graph(df_for_std_graph, loc, xlsx, error_rate)
@@ -658,8 +686,10 @@ class Tooth:
 
                 data = float(ws.cell(row=row, column=col).value)
 
-                if data > float(error_rate):  # 특정 수치 보다 크면 이면 색상 변함
-                    if data > float(error_outlier):
+                if self.compare(self.operator, data, error_rate) and data != -99999:  # 특정 수치 보다 크면 이면 색상 변함
+                    if 'Std' in ws.cell(row=row, column=1).value or 'Std' in str(ws.cell(row=4, column=col).value):
+                        pass
+                    elif self.compare(self.operator, data, error_outlier):
                         ws.cell(row=row, column=col).fill = self.outlier_color
                         ws.cell(row=row, column=col).border = self.thin_border
                     else:
@@ -670,6 +700,9 @@ class Tooth:
                     ws.cell(row=row, column=col).value = ' '
                     ws.cell(row=row, column=col).fill = self.gray_color2
                     ws.cell(row=row, column=col).border = self.thin_border
+
+                else:
+                    pass
                 ws.cell(row=4, column=col).fill = self.gray_color
 
         # table 에 작성된 값 삽입
@@ -734,7 +767,7 @@ class Tooth:
 
     # sheet2 에 스타일 적용
     def sheet2_xlsx_style(self, loc: str, xlsx: str, error_outlier: float, error_rate: float, sheet_name: str):
-        logger.info('Sheet2 Apply Style Start')
+        logger.info('Sheet2,3 Apply Style Start')
 
         wb = openpyxl.load_workbook(filename=f'{loc}/{xlsx}')
         ws = wb[sheet_name]
@@ -757,10 +790,12 @@ class Tooth:
 
         # 수치에 따른 색상, 결측치 값,색상 변환
         for col in range(2, ws.max_column + 1):
-            for row in range(6, ws.max_row + 1):
+            for row in range(5, ws.max_row + 1):
                 data = float(ws.cell(row=row, column=col).value)
-                if data > float(error_rate):  # 특정 수치 이상 이면 색상 변함
-                    if data > float(error_outlier):
+                if self.compare(self.operator, data, error_rate) and data != -99999:  # 특정 수치 보다 크면 이면 색상 변함
+                    if row == 5 or 'Std' in str(ws.cell(row=4, column=col).value):
+                        pass
+                    elif self.compare(self.operator, data, error_outlier):
                         ws.cell(row=row, column=col).fill = self.outlier_color
                         ws.cell(row=row, column=col).border = self.thin_border
                     else:
@@ -770,6 +805,8 @@ class Tooth:
                     ws.cell(row=row, column=col).value = ' '
                     ws.cell(row=row, column=col).fill = self.gray_color2
                     ws.cell(row=row, column=col).border = self.thin_border
+                else:
+                    pass
                 ws.cell(row=4, column=col).fill = self.gray_color
 
         ws.column_dimensions['A'].width = 19
@@ -788,7 +825,7 @@ class Tooth:
 
         wb.save(filename=f'{loc}/{xlsx}')
 
-        logger.info('Sheet2 Apply Style End')
+        logger.info('Sheet2,3 Apply Style End')
 
     # 그래프 생성
     def graph(self, df: pd.DataFrame, save_path: str, xlsx: str, error_rate):
@@ -828,27 +865,29 @@ class Tooth:
     # 가로 graph 제작
     def vertical_graph(self, x: list, y: list, y_out: list, location: str, error_rate):
         plt.figure(figsize=(20, 3))  # graph 사이즈
-        plt.ylim([-0.3, 1.25])  # 범위
+        plt.ylim([-0.3, 1.05])  # 범위
         plt.axhline(y=0, color='black')  # horizon y=0을 기준점 검정색 선을 그음
         plt.axhline(y=error_rate, color='red', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
         plt.xticks(fontsize=10, rotation=-5)
         # 처음 색상 결정
-        if y[0] > error_rate:
+        if self.compare(self.operator, y[0], error_rate):
             colors = ['#FFCCCC']
         else:
             colors = ['#C1F0C1']  # 초록 #C1F0C1
             # 일정 수치 이상 색 변환
         for j in range(len(x) - 1):
-            if float(y[j] + 1) > error_rate:
+            if self.compare(self.operator, float(y[j] + 1), error_rate):
                 colors.append('#FFCCCC')  # error 빨강
             else:
                 colors.append('#FFFFB3')  # 기본 노랑 #FFFFB3
-        if y_out[0] > error_rate:
+
+        if self.compare(self.operator, y_out[0], error_rate):
             colors_out = ['#FFCCCC']  # 파랑 #FFCCCC
         else:
             colors_out = ['#C1F0C1']  # 노랑 #b3d9ff
+
         for f in range(len(x) - 1):
-            if y_out[f] > error_rate:
+            if self.compare(self.operator, y_out[f + 1], error_rate):
                 colors_out.append('#FFCCCC')  # error 빨강
             else:
                 colors_out.append('#FFFFB3')  # group 초록 #C1F0C1
@@ -928,21 +967,21 @@ class Tooth:
     def std_vertical_graph(self, x: list, y: list, location: str, std: list, title: str, error_rate):  # 표준편차 수직 그래프
 
         plt.figure(figsize=(20, 3))  # graph 사이즈
-        plt.ylim([-0.3, 1.25])  # 범위
+        plt.ylim([-0.3, 1.05])  # 범위
         plt.axhline(y=0, color='black')
         plt.axhline(y=error_rate, color='red', linestyle='--')  # horizon y=0을 기준점 검정색 선을 그음
         plt.errorbar(x, y, yerr=std, color='black', ecolor='blue', fmt='.', alpha=0.5, elinewidth=2)
         plt.xticks(fontsize=10, rotation=-5)
 
         # 처음 색상 결정
-        if y[0] > error_rate:
+        if self.compare(self.operator, y[0], error_rate):
             colors = ['#FFCCCC']
         else:
             colors = ['#C1F0C1']  # 초록 #C1F0C1
 
             # 일정 수치 이상 색 변환
         for j in range(len(x) - 1):
-            if float(y[j + 1]) > error_rate:
+            if self.compare(self.operator, y[j + 1], error_rate):
                 colors.append('#FFCCCC')  # error 빨강
             else:
                 colors.append('#FFFFB3')  # 기본 노랑 #FFFFB3

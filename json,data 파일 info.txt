@@ -1,0 +1,8 @@
+.dat 파일은 landmark를 정리한 xlsx 에서 landmark number, landmark name 부분을 복사한 파일
+
+
+on3ds_group_points-remove_group	: 학습과정 중 데이터가 부족한 group은 제거하고 결과치를 뽑아 내기 위해서 존재	( 삭제해도 무관 할 예정 )
+on3ds_to_on3d_landmark_change	: AI 학습 과정 중 on3ds 번호를 on3d 용으로 변경한 데이터가 존재하여 이에 맞추어 제작 ( 변경한 xlsx 존재 )
+on3ds_group_points				: on3ds group landmark
+group_points_preShin			: on3d group landmark
+group_points_preShin_2D			: 2d landmark 그룹명은 임시로 지정함.

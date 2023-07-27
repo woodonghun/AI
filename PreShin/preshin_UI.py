@@ -20,8 +20,7 @@ from openpyxl.utils import get_column_letter
 from PreShin.loggers import logger
 
 
-# UI 에 따로 on3ds용 버튼, on3d용 버튼 제작 하여 쉽게 변환하게 제작해야함.
-# landmark.dat 에서 landmark 의 이름 정보 가지고옴. 현재 on3d 버전
+# landmark.dat 에서 landmark 의 이름 정보 가지고옴.
 # 3d landmark 번호, x, y, z 의 모음이 모음이 들어있는 predict, label txt 파일의 폴더들
 # grouping 되어 있는 json 파일이 필요함
 # 3d 용 json 파일 존재함
@@ -195,7 +194,7 @@ class PreShin_UI(QWidget):
         self.edt.setPlainText(comment)
         self.edt.setGeometry(20, 130, 300, 80)
 
-        self.dialog.setWindowTitle('AI')
+        self.dialog.setWindowTitle('ON3D/ON3DS')
         self.dialog.setGeometry(500, 300, 370, 460)
         self.dialog.exec()
         logger.info('PreShin_UI close')
@@ -349,7 +348,7 @@ class PreShin_UI(QWidget):
         id_list = [b.split('.')[0] for b in id_list]
         id_list.sort()  # id 정렬 set 함수는 정렬 안되서 나옴
         id_list.reverse()
-        self.id_list = [(j + '.txt') for j in id_list]
+        self.id_list = [(j + '.dat') for j in id_list]
 
     # label, predict 폴더 비교 없는 파일 출력
     def error_id(self):
