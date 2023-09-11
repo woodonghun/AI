@@ -14,6 +14,7 @@ from PreShin.loggers import logger
 # 2d 용 json 파일 존재하지 않음
 ''' 2D landmark spacing comment에 입력 '''
 
+
 class PreShin_UI_2d(PreShin.preshin_UI.PreShin_UI):
     def __init__(self):
         self.resize_pixel_to_mm = 0.385

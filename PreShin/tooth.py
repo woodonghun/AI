@@ -19,9 +19,16 @@ from tqdm import tqdm
 
 from PreShin.loggers import logger
 
-'''
-    모든 기준 값은 input 값을 장수로 표현한 것을 기준으로 오차, 평균 등을 구한다.
-'''
+"""
+    Volume, Polygon(dentition) Tooth Segmentation 성능 측정코드
+    
+    UI 의 가장 위에 Volume 과 Polygon 을 클릭하여 선택하는 버튼 있음
+    
+    Volume 은 nrrd파일로 구성되야함, Polygon은 txt로 구성됨.
+    
+    augmentation 파일에 대한 id 도 추가되어 있음.
+"""
+
 batch = '4'
 rate = '2e-4'
 optimizer = 'adam'
@@ -30,15 +37,8 @@ comment = 'write comment'
 safe_zone_error = '0.15'
 outlier_error = '0.3'
 
-predict_file = '.nrrd'
+predict_file = '.nrrd'  #fixme 여기 어떻게 고치지....,.,.,
 label_file = '.nrrd'
-
-
-# 엑셀 필터 기능이 문서에는 적용이 안된다고 하는데 동작이 되서 개수가 많아질 경우 확인해야함.
-
-# 필요한 predict 파일 : air, sts, hts 정보가 들어있는 predict txt 파일 폴더들
-# 필요한 label 파일 : air, sts, hts png label 파일이 들어있는 폴더들
-# predict 파일의 구조는 아직 id 당 각각 폴더 안에 있을지 하나의 폴더에 있을지 정해지지 않음
 
 def messagebox(text: str, i: str):
     signBox = QMessageBox()
@@ -52,6 +52,7 @@ def messagebox(text: str, i: str):
 
 class Tooth_UI(QWidget):
     mode = 'diceloss'
+    mode_volume_polygon = 'polygon'
 
     def __init__(self):
         super().__init__()
@@ -83,10 +84,34 @@ class Tooth_UI(QWidget):
         btn_export = QPushButton(self.dialog)
         btn_manual = QPushButton(self.dialog)
 
+        self.btn_polygon = QPushButton(self.dialog)
+        self.btn_volume = QPushButton(self.dialog)
+
         btn_pre_path.setText('Predict Path')
         btn_lbl_path.setText('Label Path')
         btn_export.setText('Export Excel')
         btn_manual.setText('Open Manual')
+
+        self.btn_polygon.setText('Polygon')
+        self.btn_volume.setText('Volume')
+
+        btn_manual.setGeometry(20, 10, 100, 20)
+        btn_lbl_path.setGeometry(20, 35, 100, 20)
+        btn_pre_path.setGeometry(20, 60, 100, 20)
+        btn_export.setGeometry(220, 345, 120, 30)
+
+        self.btn_polygon.setGeometry(140, 10, 100, 20)
+        self.btn_volume.setGeometry(250, 10, 100, 20)
+
+        btn_lbl_path.clicked.connect(self.btn_lbl_clicked)
+        btn_pre_path.clicked.connect(self.btn_pre_clicked)
+        btn_export.clicked.connect(self.btn_export_clicked)
+
+        self.btn_polygon.clicked.connect(self.btn_polygon_clicked)
+        self.btn_volume.clicked.connect(self.btn_volume_clicked)
+
+        self.btn_volume.setEnabled(True)
+        self.btn_polygon.setEnabled(False)
 
         self.edt_pre = QLineEdit(self.dialog)
         self.edt_lbl = QLineEdit(self.dialog)
@@ -137,15 +162,6 @@ class Tooth_UI(QWidget):
         self.edt_error_rate.setText(safe_zone_error)
         self.edt_outlier_rate.setText(outlier_error)
 
-        btn_manual.setGeometry(20, 10, 100, 20)
-        btn_lbl_path.setGeometry(20, 35, 100, 20)
-        btn_pre_path.setGeometry(20, 60, 100, 20)
-        btn_export.setGeometry(220, 345, 120, 30)
-
-        btn_lbl_path.clicked.connect(self.btn_lbl_clicked)
-        btn_pre_path.clicked.connect(self.btn_pre_clicked)
-        btn_export.clicked.connect(self.btn_export_clicked)
-
         self.edt = QPlainTextEdit(self.dialog)
         self.edt.setPlainText(comment)
         self.edt.setGeometry(20, 105, 340, 80)
@@ -153,6 +169,18 @@ class Tooth_UI(QWidget):
         self.dialog.setWindowTitle('Tooth')
         self.dialog.setGeometry(500, 300, 370, 420)
         self.dialog.exec()
+
+    def btn_polygon_clicked(self):
+        self.btn_polygon.setEnabled(False)
+        self.btn_volume.setEnabled(True)
+        Tooth_UI.mode_volume_polygon = 'polygon'
+        print('polygon')
+
+    def btn_volume_clicked(self):
+        self.btn_polygon.setEnabled(True)
+        self.btn_volume.setEnabled(False)
+        Tooth_UI.mode_volume_polygon = 'volume'
+        print('volume')
 
     def radiobutton(self):
         self.rdbtn_dice = QRadioButton('dice', self.dialog)
@@ -362,8 +390,10 @@ class Tooth:
     def __init__(self):
         super().__init__()
         self.get_mode = Tooth_UI.mode
+        self.get_volume_polygon_mode = Tooth_UI.mode_volume_polygon
         self.operator = '>'
         self.reverse_operator = '<'
+        self.count_error_data = []
         self.average = float
         self.std = float
         self.out_aver = float
@@ -457,8 +487,8 @@ class Tooth:
                     if '#' not in value:
                         continue
                     elif value in predict_data[key]:
-                        pre = rf'{predict_data["loc"]}/{value}{predict_file}'
-                        lbl = rf'{label_data["loc"]}/{value}{label_file}'
+                        pre = rf'{predict_data["loc"]}/{value}'
+                        lbl = rf'{label_data["loc"]}/{value}'
                         result = self.calculate(pre, lbl)
                         if '_' in value:
                             data[value.split('#')[1].split('_')[0]] = result
@@ -474,74 +504,139 @@ class Tooth:
         logger.info(f'make dice loss dataframe end ')
         return cal_result
 
-    def calculate(self, pre_nrrd: str, lbl_nrrd: str):
+    def calculate(self, pre: str, lbl: str):
         """
         dice, dieceloss, iou 계산
-        :param pre_nrrd: predict nrrd 주소
-        :param lbl_nrrd: label nrrd 주소
-        :return: diceloss 값
+        polygon 과 volume 모드 두개의 공식이 다름.
+
+        :param pre: predict data 주소
+        :param lbl: label data 주소
+        :return: diceloss, dice, iou 값
         """
-        reader = sitk.ImageFileReader()
-        reader.SetImageIO('NrrdImageIO')
-        reader.SetFileName(lbl_nrrd)
-        imgOrg: sitk.Image = reader.Execute()
 
-        imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-        imgRCNp = imgRCNp.ravel()
-        mfn = imgRCNp  # index 역할
+        if self.get_volume_polygon_mode == 'volume':    # volume mode
+            lbl = lbl+label_file    # fixme 확인안하고 코드변경한 부분 직접 확인해 봐야함
+            pre = pre+predict_file
 
-        reader = sitk.ImageFileReader()
-        if predict_file == '.nrrd':
+            reader = sitk.ImageFileReader()
             reader.SetImageIO('NrrdImageIO')
-        else:
-            reader.SetImageIO('MetaImageIO')
-        reader.SetFileName(pre_nrrd)
-        imgOrg: sitk.Image = reader.Execute()
+            reader.SetFileName(lbl)
+            imgOrg: sitk.Image = reader.Execute()
 
-        imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-        imgRCNp = imgRCNp.ravel()
-        prn = imgRCNp  # index 역할
+            imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
+            imgRCNp = imgRCNp.ravel()
+            mfn = imgRCNp  # index 역할
 
-        mfn_count = 0
-        prn_count = 0
+            reader = sitk.ImageFileReader()
+            if predict_file == '.nrrd':
+                reader.SetImageIO('NrrdImageIO')
+            else:
+                reader.SetImageIO('MetaImageIO')
+            reader.SetFileName(pre)
+            imgOrg: sitk.Image = reader.Execute()
 
-        mfn_index = 0  # 마스크의 복셀카운팅
-        prn_index = 0  # 예측의 복셀카운팅
+            imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
+            imgRCNp = imgRCNp.ravel()
+            prn = imgRCNp  # index 역할
 
-        for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-            mfn_index += 1  # 마스크의 복셀카운팅 인덱스가 1부터 시작.
-            if mv > 0:
-                mfn_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
+            mfn_count = 0
+            prn_count = 0
 
-        for pv in prn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-            prn_index += 1  # 예측의 복셀카운팅 인덱스가 1부터 시작.
-            if pv > 0:
-                prn_count += 1  # 예측 중에 1인 복셀값을 카운팅.
+            mfn_index = 0  # 마스크의 복셀카운팅
+            prn_index = 0  # 예측의 복셀카운팅
 
-        insection_count = 0
-        comp_index = 0
-        for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-            if mv > 0 and prn[comp_index] > 0:  # 정답과 예측복셀이 모두 1인 경우
-                insection_count += 1  # 교집합 복셀을 1씩 늘린다.
-            comp_index += 1
+            for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
+                mfn_index += 1  # 마스크의 복셀카운팅 인덱스가 1부터 시작.
+                if mv > 0:
+                    mfn_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
 
-        dice = insection_count * 2 / (mfn_count + prn_count)
-        iou = insection_count / (mfn_count + prn_count)
+            for pv in prn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
+                prn_index += 1  # 예측의 복셀카운팅 인덱스가 1부터 시작.
+                if pv > 0:
+                    prn_count += 1  # 예측 중에 1인 복셀값을 카운팅.
 
-        dice_loss = 1 - dice
+            insection_count = 0
+            union_count = 0  # 합집합
 
-        if self.get_mode == 'diceloss':
-            self.operator = '>'
-            self.reverse_operator = '<'
-            return dice_loss
-        elif self.get_mode == 'iou':
-            self.operator = '<'
-            self.reverse_operator = '>'
-            return iou
-        elif self.get_mode == 'dice':
-            self.operator = '<'
-            self.reverse_operator = '>'
-            return dice
+            comp_index = 0
+            for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
+                if mv > 0 or prn[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
+                    union_count += 1  # 합집합
+                    if mv > 0 and prn[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
+                        insection_count += 1  # 교집합 복셀을 1씩 늘린다.
+                comp_index += 1
+
+            dice = insection_count * 2 / (mfn_count + prn_count)
+            iou = insection_count / union_count
+
+            dice_loss = 1 - dice
+
+            if self.get_mode == 'diceloss':
+                self.operator = '>'
+                self.reverse_operator = '<'
+                return dice_loss
+            elif self.get_mode == 'iou':
+                self.operator = '<'
+                self.reverse_operator = '>'
+                return iou
+            elif self.get_mode == 'dice':
+                self.operator = '<'
+                self.reverse_operator = '>'
+                return dice
+
+        else:   # polygon mode
+            lbl = lbl+'.txt'
+            pre = pre+'.txt'
+
+            lbl_count = 0  # lbl class 개수
+            pre_count = 0  # pre class 개수
+            intersection_count = 0  # 교집합
+            union_count = 0  # 합집합
+            # 두 개의 파일을 동시에 열기
+            with open(lbl, 'r') as lbl_f, open(pre, 'r') as pre_f:
+                lbl_lines = lbl_f.readlines()  # 파일1의 모든 라인 읽기
+                pre_lines = pre_f.readlines()  # 파일2의 모든 라인 읽기
+                # 두 파일의 라인 개수 확인
+                if len(lbl_lines) != len(pre_lines):
+                    print("경고: 두 파일의 라인 개수가 다릅니다.")
+                    self.count_error_data.append(lbl)
+                    return None
+                else:
+                    # 두 파일의 내용을 동시에 읽어 오기
+                    for lbl_line, pre_line in zip(lbl_lines, pre_lines):
+                        # 각 파일의 각 줄에 대해 원하는 작업 수행
+                        lbl_line = lbl_line.strip()  # 공백 제거
+                        pre_line = pre_line.strip()
+                        # print(f'파일1: {lbl_line}, 파일2: {pre_line}')
+
+                        lbl_count += int(lbl_line)
+                        pre_count += int(pre_line)
+
+                        if int(lbl_line) + int(pre_line) > 0:
+                            union_count += 1    # 두개의 합이 0보다 크면 합집합에 카운트
+                            if int(lbl_line) + int(pre_line) > 1:
+                                intersection_count += 1     # 두개의 합이 1보다 크면 교집합에 카운트 (둘다 1이면 2가되서 교집합임)
+
+                    print(lbl_count, pre_count, intersection_count, union_count)
+                    dice = intersection_count * 2 / (lbl_count + pre_count)
+                    iou = intersection_count / union_count
+
+                    dice_loss = 1 - dice
+
+                    print(dice, iou, dice_loss)
+
+                    if self.get_mode == 'diceloss':
+                        self.operator = '>'
+                        self.reverse_operator = '<'
+                        return dice_loss
+                    elif self.get_mode == 'iou':
+                        self.operator = '<'
+                        self.reverse_operator = '>'
+                        return iou
+                    elif self.get_mode == 'dice':
+                        self.operator = '<'
+                        self.reverse_operator = '>'
+                        return dice
 
     def aver_std_process(self, diceloss: pd.DataFrame):
         diceloss_count = diceloss.count(axis=1)
@@ -565,6 +660,7 @@ class Tooth:
         diceloss_std = (df_diceloss_std / diceloss_count) ** (1 / 2)
         print('총 표준편차 :', diceloss_std)
 
+        print(f'에러 데이터 : {self.count_error_data}')
         return average, diceloss_std
 
     def to_xlsx(self, loc: str, xlsx: str, result: pd.DataFrame, error_outlier: float, error_rate: float):  # 엑셀 생성, 결과값 삽입

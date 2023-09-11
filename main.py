@@ -6,6 +6,7 @@ import PreShin.preshin_UI
 import PreShin.volume_template
 import PreShin.Mandibular
 import PreShin.tooth
+import PreShin.dentition_polygon
 
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
