@@ -37,10 +37,14 @@ comment = 'write comment'
 safe_zone_error = '0.15'
 outlier_error = '0.3'
 
-predict_file = '.nrrd'  #fixme 여기 어떻게 고치지....,.,.,
-label_file = '.nrrd'
 
 def messagebox(text: str, i: str):
+    """
+    특정 작업시 메세지 박스 띄우는 함수
+    :param text: 메인 제목 텍스트 ( ex: Warning, Notice, etc... )
+    :param i: 메세지 박스 띄우는 이유 ( ex: 두 개의 파일의 개수가 일치하지 않습니다. )
+    :return: None
+    """
     signBox = QMessageBox()
     signBox.setWindowTitle(text)
     signBox.setText(i)
@@ -253,7 +257,7 @@ class Tooth_UI(QWidget):
                 os.listdir(self.edt_lbl.text())
             except FileNotFoundError:
                 messagebox('Warning', 'predict 또는 lbl 의 폴더 경로가 올바르지 않습니다.')
-                logger.error(" 폴더 경로 에러")
+                logger.error("Folder path error")
             else:
                 if self.edt_xlsx_name.text() != '':  # 파일명 입력 했을때
                     loc_xlsx = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(), QFileDialog.ShowDirsOnly)  # 선택한 경로 str 저장
@@ -394,7 +398,7 @@ class Tooth:
         self.operator = '>'
         self.reverse_operator = '<'
         self.count_error_data = []
-        self.average = float
+        self.aver = float
         self.std = float
         self.out_aver = float
         self.out_std = float
@@ -474,15 +478,19 @@ class Tooth:
         logger.info(f'make dice loss dataframe start')
 
         cal_result = pd.DataFrame(index=self.tooth_name)  # tooth name 정보가 column name 으로 저장된 빈 dataframe 생성
-        data = {}
         print(f'Total Num ID = {len(list(label_data.keys())) - 1}')
         count = 0
 
-        for key in list(label_data.keys()):
+        logger.info(f'dice, iou, diceloss calculate start')
 
+        for key in list(label_data.keys()):
+            data = {}
             if key != 'loc':
                 count += 1
                 print(f'Now : {count}, id : {key}')
+                if len(label_data[key]) != len(predict_data[key]) or key not in predict_data:  # id에 해당되는 데이터가 맞지 않을 때 error // predict 에 없을때도 제외함.
+                    logger.error(f"id : {key} data not equal")
+                    continue
                 for value in tqdm(label_data[key], desc='Num_tooth'):
                     if '#' not in value:
                         continue
@@ -494,29 +502,30 @@ class Tooth:
                             data[value.split('#')[1].split('_')[0]] = result
                         else:
                             data[value.split('#')[1]] = result
-                    else:
-                        logger.error('label, predict nrrd data not equal')
 
                 id_result_diceloss = pd.DataFrame.from_dict(data=data, orient='index', columns=[key])
 
                 cal_result = pd.concat([cal_result, id_result_diceloss], axis=1)
-
+        logger.info(f'dice, iou, diceloss calculate end')
         logger.info(f'make dice loss dataframe end ')
         return cal_result
 
     def calculate(self, pre: str, lbl: str):
         """
-        dice, dieceloss, iou 계산
+        dice, diceloss, iou 계산
         polygon 과 volume 모드 두개의 공식이 다름.
+        설정한 모드에 따라서 return 값을 변경함
 
         :param pre: predict data 주소
         :param lbl: label data 주소
         :return: diceloss, dice, iou 값
         """
 
-        if self.get_volume_polygon_mode == 'volume':    # volume mode
-            lbl = lbl+label_file    # fixme 확인안하고 코드변경한 부분 직접 확인해 봐야함
-            pre = pre+predict_file
+        # volume mode
+        if self.get_volume_polygon_mode == 'volume':
+
+            lbl = lbl + '.nrrd'
+            pre = pre + '.nrrd'
 
             reader = sitk.ImageFileReader()
             reader.SetImageIO('NrrdImageIO')
@@ -528,10 +537,7 @@ class Tooth:
             mfn = imgRCNp  # index 역할
 
             reader = sitk.ImageFileReader()
-            if predict_file == '.nrrd':
-                reader.SetImageIO('NrrdImageIO')
-            else:
-                reader.SetImageIO('MetaImageIO')
+            reader.SetImageIO('NrrdImageIO')
             reader.SetFileName(pre)
             imgOrg: sitk.Image = reader.Execute()
 
@@ -542,8 +548,8 @@ class Tooth:
             mfn_count = 0
             prn_count = 0
 
-            mfn_index = 0  # 마스크의 복셀카운팅
-            prn_index = 0  # 예측의 복셀카운팅
+            mfn_index = 0  # 마스크의 복셀 카운팅
+            prn_index = 0  # 예측의 복셀 카운팅
 
             for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
                 mfn_index += 1  # 마스크의 복셀카운팅 인덱스가 1부터 시작.
@@ -555,7 +561,7 @@ class Tooth:
                 if pv > 0:
                     prn_count += 1  # 예측 중에 1인 복셀값을 카운팅.
 
-            insection_count = 0
+            intersection_count = 0
             union_count = 0  # 합집합
 
             comp_index = 0
@@ -563,14 +569,14 @@ class Tooth:
                 if mv > 0 or prn[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
                     union_count += 1  # 합집합
                     if mv > 0 and prn[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
-                        insection_count += 1  # 교집합 복셀을 1씩 늘린다.
+                        intersection_count += 1  # 교집합 복셀을 1씩 늘린다.
                 comp_index += 1
 
-            dice = insection_count * 2 / (mfn_count + prn_count)
-            iou = insection_count / union_count
+            dice = intersection_count * 2 / (mfn_count + prn_count)  # dice 계산  공식
+            dice_loss = 1 - dice  # dice_loss 계산 공식
+            iou = intersection_count / union_count  # iou 계산 공식
 
-            dice_loss = 1 - dice
-
+            # 현재 모드에 따라서 출력하는 값이 다름
             if self.get_mode == 'diceloss':
                 self.operator = '>'
                 self.reverse_operator = '<'
@@ -584,23 +590,27 @@ class Tooth:
                 self.reverse_operator = '>'
                 return dice
 
-        else:   # polygon mode
-            lbl = lbl+'.txt'
-            pre = pre+'.txt'
+        # polygon mode
+        else:
+            lbl = lbl + '.txt'
+            pre = pre + '.txt'
 
             lbl_count = 0  # lbl class 개수
             pre_count = 0  # pre class 개수
             intersection_count = 0  # 교집합
             union_count = 0  # 합집합
+
             # 두 개의 파일을 동시에 열기
             with open(lbl, 'r') as lbl_f, open(pre, 'r') as pre_f:
                 lbl_lines = lbl_f.readlines()  # 파일1의 모든 라인 읽기
                 pre_lines = pre_f.readlines()  # 파일2의 모든 라인 읽기
+
                 # 두 파일의 라인 개수 확인
                 if len(lbl_lines) != len(pre_lines):
                     print("경고: 두 파일의 라인 개수가 다릅니다.")
                     self.count_error_data.append(lbl)
-                    return None
+                    return None  # None 으로 넘겨서 xlsx 표에 회색으로 남도록 함.
+
                 else:
                     # 두 파일의 내용을 동시에 읽어 오기
                     for lbl_line, pre_line in zip(lbl_lines, pre_lines):
@@ -609,21 +619,18 @@ class Tooth:
                         pre_line = pre_line.strip()
                         # print(f'파일1: {lbl_line}, 파일2: {pre_line}')
 
-                        lbl_count += int(lbl_line)
+                        lbl_count += int(lbl_line)  # lbl, pre 개수 각각 카운트
                         pre_count += int(pre_line)
 
                         if int(lbl_line) + int(pre_line) > 0:
-                            union_count += 1    # 두개의 합이 0보다 크면 합집합에 카운트
+                            union_count += 1  # 두개의 합이 0보다 크면 합집합에 카운트
                             if int(lbl_line) + int(pre_line) > 1:
-                                intersection_count += 1     # 두개의 합이 1보다 크면 교집합에 카운트 (둘다 1이면 2가되서 교집합임)
+                                intersection_count += 1  # 두개의 합이 1보다 크면 교집합에 카운트 (둘다 1이면 2가되서 교집합임)
 
-                    print(lbl_count, pre_count, intersection_count, union_count)
+                    # dice iou diceloss 계산 공식 적용 ( apply the dice, diceloss, iou formula )
                     dice = intersection_count * 2 / (lbl_count + pre_count)
                     iou = intersection_count / union_count
-
                     dice_loss = 1 - dice
-
-                    print(dice, iou, dice_loss)
 
                     if self.get_mode == 'diceloss':
                         self.operator = '>'
@@ -808,9 +815,9 @@ class Tooth:
 
         ws['B1'] = '전체 데이터'
         ws['B2'] = '최종 결과'
-        ws['D1'] = f'Aver'
+        ws['D1'] = 'Aver'
         ws['F1'] = 'Std'
-        ws['H1'] = f'Remove_outlier_Aver'
+        ws['H1'] = 'Remove_outlier_Aver'
         ws['K1'] = 'Remove_outlier_Std'
         ws['D2'] = self.aver
         ws['F2'] = self.std
@@ -843,19 +850,6 @@ class Tooth:
                 ws.cell(i + 1, j + 1).border = self.thin_border
                 ws.cell(i + 1, j + 1).fill = self.yellow_color
                 ws.cell(i + 1, j + 1).alignment = Alignment(horizontal='center')
-
-        #
-        # for i in img_list:
-        #     if '.png' in i:
-        #         img = Image(image_folder_loc + f'/{i}')
-        #         if i == 'Remove_Outlier_error_rate.png':
-        #             ws.add_image(img, 'F24')
-        #         elif i == 'Remove_Outlier_sheet.png':
-        #             ws.add_image(img, 'R24')
-        #         elif i == 'sheet.png':
-        #             ws.add_image(img, 'R10')
-        #         elif i == 'error_rate.png':
-        #             ws.add_image(img, 'F10')
 
         wb.save(filename=f'{loc}/{xlsx}')
 
@@ -936,7 +930,7 @@ class Tooth:
         graph_dict = graph.to_dict('list')
         graph_value = list(graph_dict.values())
 
-        image_insert = 7  # 이미지 삽입 시작 셀
+        IMAGE_INSERT = 7  # 이미지 삽입 시작 셀
         # 이미지를 엑셀에 넣기 위함
         wb = openpyxl.load_workbook(filename=save_path + '/' + xlsx)
         ws = wb['보고용']
@@ -952,7 +946,7 @@ class Tooth:
         img = Image(location + f'/total.png')  # 파일 저장
         img.width = 1200  # 픽셀 단위 사이즈 변경
         img.height = 225
-        ws.add_image(img, f'F{image_insert}')
+        ws.add_image(img, f'F{IMAGE_INSERT}')
         wb.save(filename=save_path + '/' + xlsx)
         logger.info('graph end')
         # 최대치 ----- 20 ~ 30
@@ -967,30 +961,38 @@ class Tooth:
         plt.xticks(fontsize=10, rotation=-5)
         # 처음 색상 결정
         if self.compare(self.operator, y[0], error_rate):
-            colors = ['#FFCCCC']
+            colors = ['#FFCCCC']    # error 빨강
         else:
             colors = ['#C1F0C1']  # 초록 #C1F0C1
             # 일정 수치 이상 색 변환
         for j in range(len(x) - 1):
-            if self.compare(self.operator, float(y[j] + 1), error_rate):
+            if self.compare(self.operator, float(y[j+1]), error_rate):
                 colors.append('#FFCCCC')  # error 빨강
             else:
                 colors.append('#FFFFB3')  # 기본 노랑 #FFFFB3
 
         if self.compare(self.operator, y_out[0], error_rate):
-            colors_out = ['#FFCCCC']  # 파랑 #FFCCCC
+            colors_out = ['#FFCCCC']  # error 빨강
         else:
-            colors_out = ['#C1F0C1']  # 노랑 #b3d9ff
+            colors_out = ['#C1F0C1']  # 초록 #C1F0C1
 
         for f in range(len(x) - 1):
             if self.compare(self.operator, y_out[f + 1], error_rate):
                 colors_out.append('#FFCCCC')  # error 빨강
             else:
-                colors_out.append('#FFFFB3')  # group 초록 #C1F0C1
-        # colors 리스트 삽입
-        sns.set_palette(sns.color_palette(colors))
-        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=0.6, linestyle='dashed', linewidth=1.5, palette=colors)  # edge color 테두리 투명도
-        sns.barplot(x=x, y=y_out, edgecolor='black', alpha=1, palette=colors_out)
+                colors_out.append('#FFFFB3')  # 기본 노랑 #FFFFB3
+
+        # colors 리스트 삽입// 순서에 따라서 나중에 생성되는 plot 의 색상은 보이지 않게 되어 dice 냐 dice loss 냐에 따라 순서변경
+        if self.operator == '>':
+            color_list = [colors, colors_out]
+            alpha = [0.6, 1]
+        else:
+            color_list = [colors_out, colors]
+            alpha = [1, 0.6]
+
+        sns.set_palette(sns.color_palette(color_list[0]))
+        bar = sns.barplot(x=x, y=y, edgecolor='black', alpha=alpha[0], linestyle='dashed', linewidth=1.5, palette=color_list[0])  # edge color 테두리 투명도
+        sns.barplot(x=x, y=y_out, edgecolor='black', alpha=alpha[1], palette=color_list[1])
         bar.set(title=x[0])
         # bar 아래 글씨
         count = 0
@@ -1034,7 +1036,7 @@ class Tooth:
         wb = openpyxl.load_workbook(filename=save_path + '/' + xlsx)
         ws = wb['분석용']
 
-        # total_aver 이름, 측정값, 표준편차, outlier ~
+        # total_aver 이름, 측정값, 표준편차, outlier
         group_total_name = self.tooth_name
         group_total_value = graph_value[0]
         group_total_value_outlier = graph_value[2]
@@ -1071,7 +1073,7 @@ class Tooth:
 
         # 처음 색상 결정
         if self.compare(self.operator, y[0], error_rate):
-            colors = ['#FFCCCC']
+            colors = ['#FFCCCC']    # error 빨강
         else:
             colors = ['#C1F0C1']  # 초록 #C1F0C1
 

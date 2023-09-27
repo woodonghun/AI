@@ -107,14 +107,14 @@ class Main(QWidget):
         btn_vtp.setGeometry(20, 60, 120, 20)
         btn_vtp.clicked.connect(btn_vtp_clicked)
 
-        btn_mandibular = QPushButton(self)
-        btn_mandibular.setText("Mandibular")
-        btn_mandibular.setGeometry(20, 135, 120, 20)
-        btn_mandibular.clicked.connect(btn_mandibular_clicked)
+        # btn_mandibular = QPushButton(self)
+        # btn_mandibular.setText("Mandibular")
+        # btn_mandibular.setGeometry(20, 135, 120, 20)
+        # btn_mandibular.clicked.connect(btn_mandibular_clicked)
 
         btn_tooth = QPushButton(self)
         btn_tooth.setText("Tooth")
-        btn_tooth.setGeometry(20, 160, 120, 20)
+        btn_tooth.setGeometry(20, 135, 120, 20)
         btn_tooth.clicked.connect(btn_tooth_clicked)
 
         btn_manual = QPushButton(self)
