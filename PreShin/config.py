@@ -9,4 +9,3 @@ try:
         GROUP_POINTS: dict = json.load(f)
 except Exception as e:
     print("Failed to read config.json:", e)
-    # exit(-1)

@@ -592,8 +592,8 @@ class Tooth:
 
         # polygon mode
         else:
-            lbl = lbl + '.txt'
-            pre = pre + '.txt'
+            lbl = lbl + '.onsdat'
+            pre = pre + '.onsdat'
 
             lbl_count = 0  # lbl class 개수
             pre_count = 0  # pre class 개수
@@ -617,7 +617,14 @@ class Tooth:
                         # 각 파일의 각 줄에 대해 원하는 작업 수행
                         lbl_line = lbl_line.strip()  # 공백 제거
                         pre_line = pre_line.strip()
+
                         # print(f'파일1: {lbl_line}, 파일2: {pre_line}')
+                        # ex) 10,0 => 10 = 인덱스 정보(전체 index 행 index와 다름), 0 = 해당되는 인덱스의 mesh 유무
+                        # test 일때는 index 정보가 없어서 ',' 가 없는 경우에는 그대로 진행 하도록 함
+                        if ',' in lbl_line:
+                            lbl_line = lbl_line.split(',')[1]
+                        if ',' in pre_line:
+                            pre_line = pre_line.split(',')[1]
 
                         lbl_count += int(lbl_line)  # lbl, pre 개수 각각 카운트
                         pre_count += int(pre_line)
@@ -881,7 +888,10 @@ class Tooth:
         # 수치에 따른 색상, 결측치 값,색상 변환
         for col in range(2, ws.max_column + 1):
             for row in range(5, ws.max_row + 1):
-                data = float(ws.cell(row=row, column=col).value)
+                if ws.cell(row=row, column=col).value is None:
+                    data = 0
+                else:
+                    data = float(ws.cell(row=row, column=col).value)
                 if self.compare(self.operator, data, error_rate) and data != -99999:  # 특정 수치 보다 크면 이면 색상 변함
                     if row == 5 or 'Std' in str(ws.cell(row=4, column=col).value):
                         pass

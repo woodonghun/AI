@@ -6,7 +6,6 @@ import PreShin.preshin_UI
 import PreShin.volume_template
 import PreShin.Mandibular
 import PreShin.tooth
-import PreShin.dentition_polygon
 
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
@@ -35,7 +34,7 @@ def data_open_3d():
 
 
 # 나중에 2d 용 데이터 나오면 이용
-# def data_open_2d():
+# def data_     open_2d():
 #     file_list = os.listdir(os.getcwd())
 #     if 'group_points_preShin.json' not in file_list:
 #         messagebox("Group_points_preShin.json 파일의 경로를 확인해 주세요")
@@ -69,9 +68,9 @@ def btn_vtp_clicked():  # volume template
 
 
 def btn_mandibular_clicked():
-    logger.info('mandibular UI start')
+    logger.info('MD/MX UI start')
     PreShin.Mandibular.Mandibular_UI()
-    logger.info('mandibular UI end')
+    logger.info('MD/MX UI end')
 
 
 def btn_tooth_clicked():
@@ -107,10 +106,10 @@ class Main(QWidget):
         btn_vtp.setGeometry(20, 60, 120, 20)
         btn_vtp.clicked.connect(btn_vtp_clicked)
 
-        # btn_mandibular = QPushButton(self)
-        # btn_mandibular.setText("Mandibular")
-        # btn_mandibular.setGeometry(20, 135, 120, 20)
-        # btn_mandibular.clicked.connect(btn_mandibular_clicked)
+        btn_mandibular = QPushButton(self)
+        btn_mandibular.setText("MX / MD")
+        btn_mandibular.setGeometry(20, 160, 120, 20)
+        btn_mandibular.clicked.connect(btn_mandibular_clicked)
 
         btn_tooth = QPushButton(self)
         btn_tooth.setText("Tooth")
