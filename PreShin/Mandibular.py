@@ -371,7 +371,7 @@ class Mandibular_UI(QWidget):
                             dict_lbl = MDMX.lbl_save_data_root(self.edt_lbl_mx.text())  # label loc 읽기
                             dict_pre = MDMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
                             diceloss_dataframe = MDMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
-
+                        print(diceloss_dataframe)
                         # 엑셀 생성
                         MDMX.to_xlsx(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', diceloss_dataframe,
                                      error_outlier=float(self.edt_outlier_rate.text()), error_rate=float(self.edt_error_rate.text()))
@@ -1142,14 +1142,20 @@ class MandibularMaxilla:
         if self.operator == '>':
             color_list = [colors, colors_out]
             alpha = [0.6, 1]
+            sns.set_palette(sns.color_palette(color_list[0]))
+            bar = sns.barplot(x=x, y=y_include_column, edgecolor='black', alpha=alpha[1], linestyle='dashed', linewidth=2, width=0.5,
+                              palette=color_list[0])  # edge color 테두리 투명도
+            sns.barplot(x=x, y=y_out_include_column, edgecolor='black', alpha=alpha[1], palette=color_list[1], width=0.5)
         else:
             color_list = [colors_out, colors]
             alpha = [1, 0.6]
 
-        sns.set_palette(sns.color_palette(color_list[0]))
-        bar = sns.barplot(x=x, y=y_include_column, edgecolor='black', alpha=alpha[0], linestyle='dashed', linewidth=2, width=0.5,
-                          palette=color_list[1])  # edge color 테두리 투명도
-        sns.barplot(x=x, y=y_out_include_column, edgecolor='black', alpha=alpha[1], palette=color_list[0], width=0.5)
+            sns.set_palette(sns.color_palette(color_list[0]))
+            bar = sns.barplot(x=x, y=y_out_include_column, edgecolor='black', alpha=alpha[1], palette=color_list[0], width=0.5)
+            sns.barplot(x=x, y=y_include_column, edgecolor='black', alpha=alpha[0], linestyle='dashed', linewidth=2, width=0.5,
+                              palette=color_list[1])  # edge color 테두리 투명도
+
+
         bar.set(title=x[0])
         # bar 아래 글씨
         count = 0
