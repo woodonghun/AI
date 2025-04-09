@@ -1,0 +1,19 @@
+1	1	N	V notch of frontal	3	1	0	0	1	0	0	0
+1	2	Sella	Center of Sella Turcica	1	0	0	7	1	0	0	0
+1	3	Or	The intersection of the right frontozygomatic suture and the inner rim of the orbit in the frontal plane	3	0	0	0	1	0	0	0
+1	4	Po	The intersection of the left frontozygomatic suture and the inner rim of the orbit in the frontal plane	3	0	0	0	1	1	0	0
+1	5	Basion	Most inferior point of Right Orbital contour	3	1	0	0	1	0	0	0
+1	6	PTM 	Most inferior point of Left Orbital contour	3	1	0	0	1	1	0	0
+1	7	Ar	Most superior point of right external auditory meatus	1	1	0	0	1	0	0	0
+1	8	DC [Ricketts]	Most superior point of left external auditory meatus	5	1	0	0	1	1	0	0
+1	9	Xi [Ricketts]	The most superior point of the right inferior zygomatic arch, above the normal position of condylar head	1	0	0	0	1	0	0	0
+1	10	Pm [Ricketts]	The most superior point of the left inferior zygomatic arch, above the normal position of condylar head	5	0	0	0	1	1	0	0
+1	11	Soft palateMost	anterior point of foramen magnum in the Occipital bone	1	0	0	7	1	0	0	0
+1	12	Upper pharynx	A mid-point between R Cd-L and R Cd-M	0	0	0	0	0	0	0	1
+1	13	TM point	The most lateral point of the R condylar head	1	0	0	0	1	0	0	1
+1	14	Lower pharynx	The most medial point of the R condylar head	1	0	0	0	1	0	0	1
+1	17	ANS	The most superior point of condyle in the Condylar Coronal Plane	0	0	0	0	1	0	1	1
+1	18	PNS	The most anterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	0	0	1
+1	20	dd	The most superior point of condyle in the Condylar Coronal Plane	0	0	0	0	1	0	1	1
+1	21	dd	The most anterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	0	0	1
+

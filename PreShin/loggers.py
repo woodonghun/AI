@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from PreShin.config import CONFIG
-
+import os
 
 class logger:
     def logs(self):
@@ -18,7 +18,10 @@ class logger:
 
         # 파일 저장
         # console = logging.StreamHandler()
-        file_handler = logging.FileHandler(filename=f"C:\woo_project\AI\log\{date_s}.log")
+        script_dir = os.path.dirname(__file__)  # 현재 스크립트의 디렉토리
+        config_path = os.path.join(script_dir + '/logs/', f"{date_s}.log")
+
+        file_handler = logging.FileHandler(filename=config_path)
 
         # handler 출력 format 지정
         # console.setFormatter(formatter)

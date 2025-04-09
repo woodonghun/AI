@@ -527,54 +527,21 @@ class Tooth:
             lbl = lbl + '.nrrd'
             pre = pre + '.nrrd'
 
-            reader = sitk.ImageFileReader()
-            reader.SetImageIO('NrrdImageIO')
-            reader.SetFileName(lbl)
-            imgOrg: sitk.Image = reader.Execute()
+            image = sitk.ReadImage(lbl)
+            lbl = sitk.GetArrayFromImage(image)
 
-            imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-            imgRCNp = imgRCNp.ravel()
-            mfn = imgRCNp  # index 역할
+            image = sitk.ReadImage(pre)
+            predict = sitk.GetArrayFromImage(image)
 
-            reader = sitk.ImageFileReader()
-            reader.SetImageIO('NrrdImageIO')
-            reader.SetFileName(pre)
-            imgOrg: sitk.Image = reader.Execute()
+            prediction_class = np.where(predict == 1, 1, 0)
+            target_class = np.where(lbl == 1, 1, 0)
 
-            imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-            imgRCNp = imgRCNp.ravel()
-            prn = imgRCNp  # index 역할
+            intersection = np.sum(prediction_class * target_class)
+            union = np.sum(prediction_class) + np.sum(target_class) - intersection
 
-            mfn_count = 0
-            prn_count = 0
-
-            mfn_index = 0  # 마스크의 복셀 카운팅
-            prn_index = 0  # 예측의 복셀 카운팅
-
-            for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-                mfn_index += 1  # 마스크의 복셀카운팅 인덱스가 1부터 시작.
-                if mv > 0:
-                    mfn_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
-
-            for pv in prn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-                prn_index += 1  # 예측의 복셀카운팅 인덱스가 1부터 시작.
-                if pv > 0:
-                    prn_count += 1  # 예측 중에 1인 복셀값을 카운팅.
-
-            intersection_count = 0
-            union_count = 0  # 합집합
-
-            comp_index = 0
-            for mv in mfn:  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-                if mv > 0 or prn[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
-                    union_count += 1  # 합집합
-                    if mv > 0 and prn[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
-                        intersection_count += 1  # 교집합 복셀을 1씩 늘린다.
-                comp_index += 1
-
-            dice = intersection_count * 2 / (mfn_count + prn_count)  # dice 계산  공식
-            dice_loss = 1 - dice  # dice_loss 계산 공식
-            iou = intersection_count / union_count  # iou 계산 공식
+            dice = (2. * intersection + 1e-5) / (np.sum(prediction_class) + np.sum(target_class) + 1e-5)
+            iou = intersection / union
+            dice_loss = 1 - dice
 
             # 현재 모드에 따라서 출력하는 값이 다름
             if self.get_mode == 'diceloss':

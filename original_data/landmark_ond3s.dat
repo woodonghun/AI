@@ -1,0 +1,120 @@
+1	17	ANS	V notch of frontal	3	1	0	0	1	0	0	0
+1	18	PNS	Center of Sella Turcica	1	0	0	7	1	0	0	0
+1	19	A	The intersection of the right frontozygomatic suture and the inner rim of the orbit in the frontal plane	3	0	0	0	1	0	0	0
+1	15	R KRP	The intersection of the left frontozygomatic suture and the inner rim of the orbit in the frontal plane	3	0	0	0	1	1	0	0
+1	16	L KRP	Most inferior point of Right Orbital contour	3	1	0	0	1	0	0	0
+1	30	R GO	Most inferior point of Left Orbital contour	3	1	0	0	1	1	0	0
+1	31	L GO	Most superior point of right external auditory meatus	1	1	0	0	1	0	0	0
+1	21	Pog	Most superior point of left external auditory meatus	5	1	0	0	1	1	0	0
+1	20	B	The middle point of right porion and left porion	3	1	0	0	0	0	0	0
+1	23	Me	The most superior point of the right inferior zygomatic arch, above the normal position of condylar head	1	0	0	0	1	0	0	0
+1	22	Gn	The most superior point of the left inferior zygomatic arch, above the normal position of condylar head	5	0	0	0	1	1	0	0
+1	144	R Mental foramen	Most anterior point of foramen magnum in the Occipital bone	1	0	0	7	1	0	0	0
+2	145	L Mental foramen	A mid-point between R Cd-L and R Cd-M	0	0	0	0	0	0	0	1
+2	34	Base of Epigolttis	The most lateral point of the R condylar head	1	0	0	0	1	0	0	1
+2	24	R Sigmoid notch	The most medial point of the R condylar head	1	0	0	0	1	0	0	1
+2	25	L Sigmoid notch	The most superior point of condyle in the Condylar Coronal Plane	0	0	0	0	1	0	1	1
+2	26	R Anterior ramal point	The most anterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	0	0	1
+2	27	L Anterior ramal point	The most posterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	0	0	1
+2	28	R Post Go	The most superior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	0	0	1
+2	29	L Post Go	A mid-point between L Cd-L and L Cd-M	0	0	0	0	0	0	0	1
+2	32	R Inf Go	The most lateral point of the L condylar head	5	0	0	0	1	1	0	1
+2	33	L Inf Go	The most medial point of the L condylar head	5	0	0	0	1	1	0	1
+2	142	R Lingula	The most superior point of condyle in the Condylar Coronal Plane	0	0	0	0	1	1	1	1
+2	143	L Lingula	The most anterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	1	0	1
+2	36	R U1CP	The most posterior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	1	0	1
+2	37	R U1RP	The most superior point of condyle in the Condylar Sagittal Plane within the range of Glenoid Fossa	0	0	0	0	1	1	0	1
+2	65	R U2CP	The point in the Glenoid Fossa closest to the R Cd-L in the Condylar Coronal Plane	0	0	0	0	1	0	1	2
+2	66	R U2RP	The point in the Glenoid Fossa closest to the R Cd-M in the Condylar Coronal Plane	0	0	0	0	1	0	1	2
+2	52	R L1CP	The point in the Glenoid Fossa closest to the R C Cd-S in the Condylar Coronal Plane	0	0	0	0	1	0	1	2
+2	53	R L1RP	The point in the Glenoid Fossa closest to the R Cd-A in the Condylar Sagittal Plane	0	0	0	0	1	0	0	2
+2	91	R L2CP	The point in the Glenoid Fossa closest to the R Cd-P in the Condylar Sagittal Plane	0	0	0	0	1	0	0	2
+2	92	R L2RP	The point in the Glenoid Fossa closest to the R S Cd-S in the Condylar Sagittal Plane	0	0	0	0	1	0	0	2
+2	38	R U3CP	The point in the Glenoid Fossa closest to the L Cd-L in the Condylar Coronal Plane	0	0	0	0	1	1	1	2
+2	39	R U3RP	The point in the Glenoid Fossa closest to the L Cd-M in the Condylar Coronal Plane	0	0	0	0	1	1	1	2
+2	67	R U4CP	The point in the Glenoid Fossa closest to the L C Cd-S in the Condylar Coronal Plane	0	0	0	0	1	1	1	2
+2	68	R U4RP	The point in the Glenoid Fossa closest to the L Cd-A in the Condylar Sagittal Plane	0	0	0	0	1	1	0	2
+2	54	R L3CP	The point in the Glenoid Fossa closest to the L Cd-P in the Condylar Sagittal Plane	0	0	0	0	1	1	0	2
+2	55	R L3RP	The point in the Glenoid Fossa closest to the L S Cd-S in the Condylar Sagittal Plane	0	0	0	0	1	1	0	2
+3	93	R L4CP	The most inferior point of the right key ridge in the sagittal plane	1	0	0	0	1	0	0	0
+3	94	R L4RP	The most inferior point of the left key ridge in the sagittal plane	5	0	0	0	1	1	0	0
+3	70	R U5CP	The most anterior point of the premaxillary bone in the sagittal plane	1	0	0	0	1	0	0	0
+3	71	R U5RP	The most posterior point of the palatine bone in the sagittal plane	1	0	0	7	1	0	0	0
+3	40	R U6CP	Deepest point between ANS and the upper incisal alveolus	3	0	0	0	1	0	0	0
+3	41	R U6RP	The point on the zygomatic bone lateral to deepest concavity of anterior concavity (at the turning point of bony curvature)	7	0	0	0	1	0	0	0
+3	95	R L5CP	The point on the zygomatic bone lateral to deepest concavity of anterior concavity (at the turning point of bony curvature)	7	0	0	0	1	1	0	0
+3	96	R L5RP	The most lateral point of right zygomatic arch, point determined from submental vertex view	7	0	0	0	1	0	0	0
+3	56	R L6CP	The most lateral point of left zygomatic arch, point determined from submental vertex view	7	0	0	0	1	1	0	0
+4	57	R L6RP	Deepest point between Pogonion and lower incisal alveolus	3	0	0	0	1	0	0	0
+4	73	R U7CP	Most anterior point of the Symphysis	3	0	0	0	1	0	0	0
+4	74	R U7RP	Middle point between most anterior (Pogonion) and most inferior point of chin (Menton)	3	0	0	0	1	0	0	0
+4	76	R U8CP	Most inferior point on the symphyseal outline	3	0	0	0	1	0	0	0
+4	77	R U8RP	The tip of the right coronoid process in the sagittal plane	1	0	0	0	1	0	0	0
+4	97	R L7CP	The tip of the left coronoid process in the sagittal plane	5	0	0	0	1	1	0	0
+4	98	R L7RP	The deepest point between right condyle and coronoid process	1	0	0	0	1	0	0	0
+4	99	R L8CP	The deepest point between left condyle and coronoid process	5	0	0	0	1	1	0	0
+4	100	R L8RP	The most posterior point on the anterior border of right ascending ramus	1	0	0	0	1	0	0	0
+4	43	L U1CP	The most posterior point on the anterior border of left ascending ramus	5	0	0	0	1	1	0	0
+4	44	L U1RP	The most posterior point on posterior border of lower half of right ramus	1	0	0	0	1	0	0	0
+4	78	L U2CP	The most posterior point on posterior border of lower half of left ramus	5	0	0	0	1	1	0	0
+4	79	L U2RP	The point in the inferoposterior outline of the right mandible at which the surface turns from the inferior border into the posterior border	1	0	0	0	1	0	0	0
+4	58	L L1CP	The point in the inferoposterior outline of the left mandible at which the surface turns from the inferior border into the posterior border	5	0	0	0	1	1	0	0
+4	59	L L1RP	The most inferior point of inferior border of lower half of right ramus	1	0	0	0	1	0	0	0
+4	101	L L2CP	The most inferior point of inferior border of lower half of left ramus	5	0	0	0	1	1	0	0
+4	102	L L2RP	The deepest point between epiglottis and base of tongue	1	0	0	7	1	0	0	0
+5	45	L U3CP	Upper dental midline point	3	0	0	1	1	0	0	0
+5	46	L U3RP	The midpoint of the incisal maxillary right central incisor	3	0	0	1	1	0	0	0
+5	80	L U4CP	The tip of the root of the maxillary right central incisor	3	0	0	1	1	0	0	0
+5	81	L U4RP	The tip of the crown of the maxillary right canine	3	0	0	1	1	0	0	0
+5	60	L L3CP	The tip of the root of the maxillary right canine	3	0	0	1	1	0	0	0
+5	61	L L3RP	The tip of the mesiobuccal cusp of the maxillary right first molar crown	1	0	0	1	1	0	0	0
+5	103	L L4CP	The tip of the mesiobuccal root of the maxillary right first molar	1	0	0	1	1	0	0	0
+5	104	L L4RP	The tip of the palatal root of the maxillary right first molar	1	0	0	1	1	0	0	0
+5	83	L U5CP	The midpoint of the incisal maxillary left central incisor	3	0	0	1	1	1	0	0
+5	84	L U5RP	The tip of the root of the maxillary left central incisor	3	0	0	1	1	1	0	0
+5	47	L U6CP	The tip of the crown of the maxillary left canine	3	0	0	1	1	1	0	0
+5	48	L U6RP	The tip of the root of the maxillary left canine	3	0	0	1	1	1	0	0
+5	105	L L5CP	The tip of the mesiobuccal cusp of the maxillary left first molar crown	5	0	0	1	1	1	0	0
+5	106	L L5RP	The tip of the mesiobuccal root of the maxillary left first molar	5	0	0	1	1	1	0	0
+5	62	L L6CP	The tip of the palatal root of the maxillary left first molar	5	0	0	1	1	1	0	0
+5	63	L L6RP	The middle point of right and left upper 6 crown point	3	0	0	0	0	0	0	0
+5	86	L U7CP	Lower dental midline point	3	0	0	1	1	0	0	0
+5	87	L U7RP	The midpoint of the incisal mandibular right central incisor	3	0	0	1	1	0	0	0
+5	89	L U8CP	The tip of the root of the mandibular right central incisor	3	0	0	1	1	0	0	0
+5	90	L U8RP	The tip of the crown of the mandibular right canine	3	0	0	1	1	0	0	0
+5	107	L L7CP	The tip of the root of the mandibular right canine	3	0	0	1	1	0	0	0
+5	108	L L7RP	The tip of the mesiobuccal cusp of the mandibular right first molar crown	1	0	0	1	1	0	0	0
+5	109	L L8CP	The tip of the mesiobuccal root of the mandibular right first molar	1	0	0	1	1	0	0	0
+5	110	L L8RP	The midpoint of the incisal mandibular left central incisor	3	0	0	1	1	1	0	0
+5	69	R U4PRP	The tip of the root of the mandibular left central incisor	3	0	0	1	1	1	0	0
+5	72	R U5PRP	The tip of the crown of the mandibular left canine	3	0	0	1	1	1	0	0
+5	42	R U6PRP	The tip of the root of the mandibular left canine	3	0	0	1	1	1	0	0
+5	75	R U7PRP	The tip of the mesiobuccal cusp of the mandibular left first molar crown	5	0	0	1	1	1	0	0
+5	82	L U4PRP	The tip of the mesiobuccal root of the mandibular left first molar	5	0	0	1	1	1	0	0
+5	85	L U5PRP	The middle point of right and left Lower 6 crown point	0	0	0	0	0	0	0	0
+6	49	L U6PRP	The midpoint of the incisal maxillary right lateral incisor	3	0	0	1	1	0	0	0
+6	88	L U7PRP	The tip of the root of the maxillary right lateral incisor	3	0	0	1	1	0	0	0
+6	140	R S Go	The tip of the buccal cusp of the maxillary right first premolar crown	1	0	0	1	1	0	0	0
+6	141	L S Go	The tip of the buccal root of the maxillary right first premolar	1	0	0	1	1	0	0	0
+6	120	Pronasale	The tip of the palatal root of the maxillary right first premolar	1	0	0	1	1	0	0	0
+6	123	R Alar	The tip of the buccal cusp of the maxillary right second premolar crown	1	0	0	1	1	0	0	0
+6	124	L Alar	The tip of the buccal root of the maxillary right second premolar	1	0	0	1	1	0	0	0
+6	121	Columella	The tip of the palatal root of the maxillary right second premolar	1	0	0	1	1	0	0	0
+6	122	Subnasale	The tip of the mesiobuccal cusp of the maxillary right second molar crown	1	0	0	1	1	0	0	0
+6	125	Superior Sulcus	The tip of the mesiobuccal root of the maxillary right second molar	1	0	0	1	1	0	0	0
+6	126	Labiale Superius	The tip of the palatal root of the maxillary right second molar	1	0	0	1	1	0	0	0
+6	129	Upper lip	The tip of the mesiobuccal cusp of the maxillary right third molar crown	1	0	0	1	1	0	0	0
+6	130	Stomion superius	The tip of the mesiobuccal root of the maxillary right third molar	1	0	0	1	1	0	0	0
+6	35	U1MP	The midpoint of the incisal maxillary left lateral incisor	3	0	0	1	1	1	0	0
+6	127	R Crista Philtri	The tip of the root of the maxillary left lateral incisor	3	0	0	1	1	1	0	0
+6	128	L Crista Philtri	The tip of the buccal cusp of the maxillary left first premolar crown	5	0	0	1	1	1	0	0
+6	131	R Cheilion	The tip of the buccal root of the maxillary left first premolar	5	0	0	1	1	1	0	0
+6	132	L Cheilion	The tip of the palatal root of the maxillary left first premolar	5	0	0	1	1	1	0	0
+6	139	CNJ	The tip of the buccal cusp of the maxillary left second premolar crown	5	0	0	1	1	1	0	0
+6	130	Stomion superius	The tip of the buccal root of the maxillary left second premolar	5	0	0	1	1	1	0	0
+6	137	S GN	The tip of the palatal root of the maxillary left second premolar	5	0	0	1	1	1	0	0
+6	138	S Menton	The tip of the mesiobuccal cusp of the maxillary left second molar crown	5	0	0	1	1	1	0	0
+6	134	Labiale Inferius	The tip of the mesiobuccal root of the maxillary left second molar	5	0	0	1	1	1	0	0
+6	133	Lower lip	The tip of the palatal root of the maxillary left second molar	5	0	0	1	1	1	0	0
+6	135	Mentolabial Sulcus	The tip of the mesiobuccal cusp of the maxillary left third molar crown	5	0	0	1	1	1	0	0
+6	136	S Pogonion	The tip of the mesiobuccal root of the maxillary left third molar	5	0	0	1	1	1	0	0

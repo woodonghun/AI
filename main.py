@@ -68,9 +68,9 @@ def btn_vtp_clicked():  # volume template
 
 
 def btn_mandibular_clicked():
-    logger.info('MD/MX UI start')
+    logger.info('MN/MX UI start')
     PreShin.Mandibular.Mandibular_UI()
-    logger.info('MD/MX UI end')
+    logger.info('MN/MX UI end')
 
 
 def btn_tooth_clicked():
@@ -107,7 +107,7 @@ class Main(QWidget):
         btn_vtp.clicked.connect(btn_vtp_clicked)
 
         btn_mandibular = QPushButton(self)
-        btn_mandibular.setText("MX / MD")
+        btn_mandibular.setText("MX / MN")
         btn_mandibular.setGeometry(20, 160, 120, 20)
         btn_mandibular.clicked.connect(btn_mandibular_clicked)
 

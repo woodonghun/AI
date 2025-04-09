@@ -16,7 +16,7 @@ import pandas as pd
 from openpyxl.styles import PatternFill, Font
 import seaborn as sns
 from openpyxl.utils import get_column_letter
-
+import pandas
 from PreShin.loggers import logger
 
 
@@ -585,13 +585,33 @@ class PreShin_UI(QWidget):
 
                         self.std_outlier = df_result_std_outlier['Aver'].head(-2).std(ddof=0)  # head(-2) Aver, std 제외한 표준편차
 
+                        # 모든 행 출력
+                        pd.set_option('display.max_rows', None)
+
+                        # 모든 열 출력
+                        pd.set_option('display.max_columns', None)
+
+                        # 컬럼 너비를 넓게 설정
+                        pd.set_option('display.max_colwidth', None)
+
                         aver_std = "Landmark_name == ['Aver','std']"
                         df_outlier_aver_std_row = df_result_std_outlier.query(aver_std)  # 표준 편차, 평균 row
                         df_outlier_aver_std_row = df_outlier_aver_std_row.replace(['Aver', 'std'], ['Remove_Outlier_Aver', 'Remove_Outlier_std'])
+                        logger.info(df_outlier_aver_std_row)
+
                         df_outlier_aver_std_column = df_result_std_outlier[['Aver', 'std']]  # 표준 편차, 평균 column
                         df_outlier_aver_std_column = df_outlier_aver_std_column.rename(columns={'Aver': 'Remove_Outlier_Aver', 'std': 'Remove_Outlier_std'})
+                        logger.info(df_outlier_aver_std_column)
+
                         df_result_std = pd.concat([df_result_std, df_outlier_aver_std_row])
-                        df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
+                        logger.info(df_result_std)
+                        try:
+                            df_result_std = pd.concat([df_result_std, df_outlier_aver_std_column], axis=1)
+                        except pandas.errors.InvalidIndexError as e:
+                            logger.error('Invalid_IndexError')
+                            logger.error(e)
+                        except Exception as e:
+                            logger.error(e)
 
                         self.df_result = df_result_std.fillna(-99999)
                         self.df_result.reset_index(inplace=True, drop='index')

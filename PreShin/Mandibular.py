@@ -59,7 +59,7 @@ def messagebox(text: str, i: str):
 
 class Mandibular_UI(QWidget):
     mode = 'diceloss'
-    mode_all_md_mx = 'ALL'
+    mode_all_mn_mx = 'ALL'
 
     def __init__(self):
         super().__init__()
@@ -87,42 +87,42 @@ class Mandibular_UI(QWidget):
         self.table.setGeometry(20, 220, 180, 145)
 
         self.btn_pre_path = QPushButton(self.dialog)
-        self.btn_lbl_md_path = QPushButton(self.dialog)
+        self.btn_lbl_mn_path = QPushButton(self.dialog)
         self.btn_lbl_mx_path = QPushButton(self.dialog)
         self.btn_export = QPushButton(self.dialog)
         btn_manual = QPushButton(self.dialog)
 
         self.btn_pre_path.setText('Predict Path')
         self.btn_lbl_mx_path.setText('MX Label Path')
-        self.btn_lbl_md_path.setText('MD label Path')
+        self.btn_lbl_mn_path.setText('MN label Path')
         self.btn_export.setText('Export Excel')
         btn_manual.setText('Open Manual')
 
         btn_manual.setGeometry(20, 10, 100, 20)
         self.btn_pre_path.setGeometry(20, 35, 100, 20)
-        self.btn_lbl_md_path.setGeometry(20, 60, 100, 20)
+        self.btn_lbl_mn_path.setGeometry(20, 60, 100, 20)
         self.btn_lbl_mx_path.setGeometry(20, 85, 100, 20)
         self.btn_export.setGeometry(220, 370, 120, 30)
 
-        self.btn_lbl_md_path.clicked.connect(self.btn_lbl_md_clicked)
+        self.btn_lbl_mn_path.clicked.connect(self.btn_lbl_mn_clicked)
         self.btn_lbl_mx_path.clicked.connect(self.btn_lbl_mx_clicked)
         self.btn_pre_path.clicked.connect(self.btn_pre_clicked)
         self.btn_export.clicked.connect(self.btn_export_clicked)
 
         self.btn_ALL = QPushButton(self.dialog)
-        self.btn_MD = QPushButton(self.dialog)
+        self.btn_MN = QPushButton(self.dialog)
         self.btn_MX = QPushButton(self.dialog)
 
         self.btn_ALL.setText('ALL')
-        self.btn_MD.setText('MD')
+        self.btn_MN.setText('MN')
         self.btn_MX.setText('MX')
 
         self.btn_ALL.setGeometry(130, 10, 50, 20)
-        self.btn_MD.setGeometry(180, 10, 50, 20)
+        self.btn_MN.setGeometry(180, 10, 50, 20)
         self.btn_MX.setGeometry(230, 10, 50, 20)
 
         self.btn_ALL.clicked.connect(self.btn_all_clicked)
-        self.btn_MD.clicked.connect(self.btn_MD_clicked)
+        self.btn_MN.clicked.connect(self.btn_MN_clicked)
         self.btn_MX.clicked.connect(self.btn_MX_clicked)
 
         lbl_error = QLabel(self.dialog)
@@ -141,7 +141,7 @@ class Mandibular_UI(QWidget):
         self.edt_xlsx_name.setAlignment(Qt.AlignRight)  # 엑셀명
 
         self.edt_pre = QLineEdit(self.dialog)
-        self.edt_lbl_md = QLineEdit(self.dialog)
+        self.edt_lbl_mn = QLineEdit(self.dialog)
         self.edt_lbl_mx = QLineEdit(self.dialog)
 
         # self.edt_pre.setText(r'C:\Users\3DONS\Desktop\MD_MX_TEST\original')
@@ -152,7 +152,7 @@ class Mandibular_UI(QWidget):
         self.radiobutton()
 
         self.edt_pre.setGeometry(130, 35, 230, 20)
-        self.edt_lbl_md.setGeometry(130, 60, 230, 20)
+        self.edt_lbl_mn.setGeometry(130, 60, 230, 20)
         self.edt_lbl_mx.setGeometry(130, 85, 230, 20)
 
         lbl_error.setGeometry(220, 265, 100, 20)
@@ -188,62 +188,62 @@ class Mandibular_UI(QWidget):
         self.edt.setGeometry(20, 130, 340, 80)
 
         self.btn_ALL.setEnabled(True)
-        self.btn_MD.setEnabled(True)
+        self.btn_MN.setEnabled(True)
         self.btn_MX.setEnabled(True)
         self.btn_export.setEnabled(False)
-        self.btn_lbl_md_path.setEnabled(False)
+        self.btn_lbl_mn_path.setEnabled(False)
         self.btn_lbl_mx_path.setEnabled(False)
 
-        self.edt_lbl_md.setEnabled(False)
+        self.edt_lbl_mn.setEnabled(False)
         self.edt_lbl_mx.setEnabled(False)
 
-        self.dialog.setWindowTitle('MX / MD')
+        self.dialog.setWindowTitle('MX / MN')
         self.dialog.setGeometry(500, 300, 370, 420)
         self.dialog.exec()
 
     def btn_all_clicked(self):
         self.btn_ALL.setEnabled(False)
-        self.btn_MD.setEnabled(True)
+        self.btn_MN.setEnabled(True)
         self.btn_MX.setEnabled(True)
 
-        self.btn_lbl_md_path.setEnabled(True)
+        self.btn_lbl_mn_path.setEnabled(True)
         self.btn_lbl_mx_path.setEnabled(True)
 
-        self.edt_lbl_md.setEnabled(True)
+        self.edt_lbl_mn.setEnabled(True)
         self.edt_lbl_mx.setEnabled(True)
         self.btn_export.setEnabled(True)
 
-        Mandibular_UI.mode_all_md_mx = 'ALL'
+        Mandibular_UI.mode_all_mn_mx = 'ALL'
         print('ALL')
 
-    def btn_MD_clicked(self):
+    def btn_MN_clicked(self):
         self.btn_ALL.setEnabled(True)
-        self.btn_MD.setEnabled(False)
+        self.btn_MN.setEnabled(False)
         self.btn_MX.setEnabled(True)
 
-        self.btn_lbl_md_path.setEnabled(True)
+        self.btn_lbl_mn_path.setEnabled(True)
         self.btn_lbl_mx_path.setEnabled(False)
 
-        self.edt_lbl_md.setEnabled(True)
+        self.edt_lbl_mn.setEnabled(True)
         self.edt_lbl_mx.setEnabled(False)
         self.btn_export.setEnabled(True)
 
-        Mandibular_UI.mode_all_md_mx = 'MD'
-        print('MD')
+        Mandibular_UI.mode_all_mn_mx = 'MN'
+        print('MN')
 
     def btn_MX_clicked(self):
         self.btn_ALL.setEnabled(True)
-        self.btn_MD.setEnabled(True)
+        self.btn_MN.setEnabled(True)
         self.btn_MX.setEnabled(False)
 
-        self.btn_lbl_md_path.setEnabled(False)
+        self.btn_lbl_mn_path.setEnabled(False)
         self.btn_lbl_mx_path.setEnabled(True)
 
-        self.edt_lbl_md.setEnabled(False)
+        self.edt_lbl_mn.setEnabled(False)
         self.edt_lbl_mx.setEnabled(True)
         self.btn_export.setEnabled(True)
 
-        Mandibular_UI.mode_all_md_mx = 'MX'
+        Mandibular_UI.mode_all_mn_mx = 'MX'
         print('MX')
 
     def radiobutton(self):
@@ -294,14 +294,14 @@ class Mandibular_UI(QWidget):
         logger.info('Label Button OUT')
 
     # label 버튼 클릭 -> 디렉토리 입력
-    def btn_lbl_md_clicked(self):
+    def btn_lbl_mn_clicked(self):
         logger.info('Label Button IN')
         loc = QFileDialog.getExistingDirectory(self, "Open file", os.getcwd(), QFileDialog.ShowDirsOnly)  # 창 title, 주소 나중에 변경
         # 폴더 경로 입력
         if loc != '':
-            self.edt_lbl_md.setText(str(loc))
+            self.edt_lbl_mn.setText(str(loc))
         else:
-            self.edt_lbl_md.setText('')
+            self.edt_lbl_mn.setText('')
         logger.info('Label Button OUT')
 
     # predict 버튼 클릭 -> 디렉토리 입력
@@ -325,14 +325,14 @@ class Mandibular_UI(QWidget):
         # if self.edt_lbl.text() != '' and self.edt_pre.text() != '':  # label, predict 경로 입력
 
         try:  # lbl pre 폴더 경로 확인
-            if Mandibular_UI.mode_all_md_mx == 'ALL':
+            if Mandibular_UI.mode_all_mn_mx == 'ALL':
                 os.listdir(self.edt_pre.text())
-                os.listdir(self.edt_lbl_md.text())
+                os.listdir(self.edt_lbl_mn.text())
                 os.listdir(self.edt_lbl_mx.text())
-            elif Mandibular_UI.mode_all_md_mx == 'MD':
+            elif Mandibular_UI.mode_all_mn_mx == 'MN':
                 os.listdir(self.edt_pre.text())
-                os.listdir(self.edt_lbl_md.text())
-            elif Mandibular_UI.mode_all_md_mx == 'MX':
+                os.listdir(self.edt_lbl_mn.text())
+            elif Mandibular_UI.mode_all_mn_mx == 'MX':
                 os.listdir(self.edt_pre.text())
                 os.listdir(self.edt_lbl_mx.text())
         except FileNotFoundError:
@@ -345,46 +345,49 @@ class Mandibular_UI(QWidget):
                     file = os.listdir(loc_xlsx)  # 엑셀 저장 위치에 있는 파일 읽기
                     if fr'{self.edt_xlsx_name.text()}' not in file:  # 동일한 파일명이 없을때
                         os.mkdir(f'{loc_xlsx}/{self.edt_xlsx_name.text()}')
-                        MDMX = MandibularMaxilla()  # class 가져옴
+                        MNMX = MandibularMaxilla()  # class 가져옴
                         # vol.pre_lbl_compare(self.edt_lbl.text(), self.edt_pre.text())  # lbl, pre 폴더에 존재 하는 폴더 목록 비교
 
                         # todo 여기에서 Mode 를 결정하고 루트를 어떻게 정할지 확인한다.
-                        if Mandibular_UI.mode_all_md_mx == 'ALL':
-                            dict_pre = MDMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
-                            dict_lbl_MD = MDMX.lbl_save_data_root(self.edt_lbl_md.text())  # label loc 읽기
-                            dict_lbl_MX = MDMX.lbl_save_data_root(self.edt_lbl_mx.text())  # lbl loc 읽기
+                        if Mandibular_UI.mode_all_mn_mx == 'ALL':
+                            dict_pre = MNMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
+                            dict_lbl_MN = MNMX.lbl_save_data_root(self.edt_lbl_mn.text())  # label loc 읽기
+                            dict_lbl_MX = MNMX.lbl_save_data_root(self.edt_lbl_mx.text())  # lbl loc 읽기
 
                             dict_lbl = defaultdict(list)
-                            for k, v in chain(dict_lbl_MD.items(), dict_lbl_MX.items()):
+                            for k, v in chain(dict_lbl_MN.items(), dict_lbl_MX.items()):
                                 if k == 'loc':
                                     dict_lbl[k].append(v)
                                 else:
                                     dict_lbl[k].append(v[0])
 
-                            diceloss_dataframe = MDMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
+                            diceloss_dataframe = MNMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
+                            # diceloss_dataframe = diceloss_dataframe[['MX','MN']]
                             print(diceloss_dataframe)
-                        elif Mandibular_UI.mode_all_md_mx == 'MD':
-                            dict_lbl = MDMX.lbl_save_data_root(self.edt_lbl_md.text())  # label loc 읽기
-                            dict_pre = MDMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
-                            diceloss_dataframe = MDMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
-                        elif Mandibular_UI.mode_all_md_mx == 'MX':
-                            dict_lbl = MDMX.lbl_save_data_root(self.edt_lbl_mx.text())  # label loc 읽기
-                            dict_pre = MDMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
-                            diceloss_dataframe = MDMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
+                        elif Mandibular_UI.mode_all_mn_mx == 'MN':
+                            dict_lbl = MNMX.lbl_save_data_root(self.edt_lbl_mn.text())  # label loc 읽기
+                            dict_pre = MNMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
+                            diceloss_dataframe = MNMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
+                        elif Mandibular_UI.mode_all_mn_mx == 'MX':
+                            dict_lbl = MNMX.lbl_save_data_root(self.edt_lbl_mx.text())  # label loc 읽기
+                            dict_pre = MNMX.pre_save_data_root(self.edt_pre.text())  # predict loc 읽기
+                            diceloss_dataframe = MNMX.make_dice_loss_dataframe(dict_pre, dict_lbl)  # 데이터 불러오기
+
+                        # diceloss_dataframe = diceloss_dataframe.swapaxes(0,1)    #dataframe 순서 변경
                         print(diceloss_dataframe)
                         # 엑셀 생성
-                        MDMX.to_xlsx(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', diceloss_dataframe,
+                        MNMX.to_xlsx(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx', diceloss_dataframe,
                                      error_outlier=float(self.edt_outlier_rate.text()), error_rate=float(self.edt_error_rate.text()))
                         # sheet1 설정
-                        MDMX.sheet1_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
+                        MNMX.sheet1_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
                                                error_rate=float(self.edt_error_rate.text()),
                                                error_outlier=float(self.edt_outlier_rate.text()))
                         # sheet2,3 설정
-                        MDMX.sheet2_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
+                        MNMX.sheet2_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
                                                error_rate=float(self.edt_error_rate.text()),
                                                error_outlier=float(self.edt_outlier_rate.text()), sheet_name='보고용')
                         # sheet2,3 설정
-                        MDMX.sheet2_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
+                        MNMX.sheet2_xlsx_style(f'{loc_xlsx}/{self.edt_xlsx_name.text()}', fr'{self.edt_xlsx_name.text()}.xlsx',
                                                error_rate=float(self.edt_error_rate.text()),
                                                error_outlier=float(self.edt_outlier_rate.text()), sheet_name='분석용')
                         # ui 에 있는 comment 삽입
@@ -473,7 +476,7 @@ class MandibularMaxilla:
     def __init__(self):
         super().__init__()
         self.get_mode = Mandibular_UI.mode
-        self.get_all_md_mx_mode = Mandibular_UI.mode_all_md_mx
+        self.get_all_mn_mx_mode = Mandibular_UI.mode_all_mn_mx
         self.operator = '>'
         self.reverse_operator = '<'
         self.count_error_data = []
@@ -482,7 +485,7 @@ class MandibularMaxilla:
         self.out_aver = float
         self.out_std = float
         self.dataframe_column = [
-            'MD', 'MX'
+            'MN', 'MX'
         ]
         self.accuracy_aver_std = pd.DataFrame()
         self.sheet_aver_std = pd.DataFrame()
@@ -589,18 +592,18 @@ class MandibularMaxilla:
                 # if len(label_data[key]) != len(predict_data[key]) or key not in predict_data:  # id에 해당되는 데이터가 맞지 않을 때 error // predict 에 없을때도 제외함.
                 #     logger.error(f"id : {key} data not equal")
                 #     continue
-                pre = rf'{predict_data["loc"]}/{label_data[key][0].split("#")[0]}_output'
-                if Mandibular_UI.mode_all_md_mx == 'ALL':
-                    lbl_mx = rf'{label_data["loc"][1]}/{label_data[key][1]}'
-                    lbl_mn = rf'{label_data["loc"][0]}/{label_data[key][0]}'
+                pre = rf'{predict_data["loc"]}/{label_data[key.split(".")[0]][0].split("#")[0]}'
+                if Mandibular_UI.mode_all_mn_mx == 'ALL':
+                    lbl_mx = rf'{label_data["loc"][1]}/{label_data[key.split(".")[0]][1]}'
+                    lbl_mn = rf'{label_data["loc"][0]}/{label_data[key.split(".")[0]][0]}'
                     print(lbl_mn, lbl_mx)
                     result1, result2 = self.calculate(pre, lbl_mx, lbl_mn)
                     if '_' in label_data[key]:
-                        data['MD'] = result2
+                        data['MN'] = result2
                         data['MX'] = result1
 
                     else:
-                        data['MD'] = result2
+                        data['MN'] = result2
                         data['MX'] = result1
 
                 else:
@@ -608,9 +611,9 @@ class MandibularMaxilla:
                     print(lbl)
                     result = self.calculate(pre, lbl, '')
                     if '_' in label_data[key][0]:
-                        data[Mandibular_UI.mode_all_md_mx] = result
+                        data[Mandibular_UI.mode_all_mn_mx] = result
                     else:
-                        data[Mandibular_UI.mode_all_md_mx] = result
+                        data[Mandibular_UI.mode_all_mn_mx] = result
 
                 id_result_diceloss = pd.DataFrame.from_dict(data=data, orient='index', columns=[key])
 
@@ -628,89 +631,40 @@ class MandibularMaxilla:
         :return: dice, diceloss, iou float 값으로 나옴. Mode : ALL => 2개 출력 mx, md 순서
         """
 
-        if lbl_num2 != '':
-            lbl_2 = lbl_num2 + '.nrrd'
-            reader = sitk.ImageFileReader()
-            reader.SetImageIO('NrrdImageIO')
-            reader.SetFileName(lbl_2)
-            imgOrg: sitk.Image = reader.Execute()
-            imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-            imgRCNp = imgRCNp.ravel()   # 평탄화 작업
-            mfn2 = imgRCNp  # index 역할
-            mfn2_count = 0
-
         # volume mode
         lbl_1 = lbl_num1 + '.nrrd'
         pre = pre + '.nrrd'
-        reader = sitk.ImageFileReader()
-        reader.SetImageIO('NrrdImageIO')
-        reader.SetFileName(lbl_1)
-        imgOrg: sitk.Image = reader.Execute()
-        imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-        imgRCNp = imgRCNp.ravel()
-        mfn1 = imgRCNp  # index 역할
 
-        reader = sitk.ImageFileReader()
-        reader.SetImageIO('NrrdImageIO')
-        reader.SetFileName(pre)
-        imgOrg: sitk.Image = reader.Execute()
-        imgRCNp: np.ndarray = sitk.GetArrayFromImage(imgOrg)
-        imgRCNp = imgRCNp.ravel()
-        prn = imgRCNp  # index 역할
+        image = sitk.ReadImage(lbl_1)
+        lbl_1 = sitk.GetArrayFromImage(image)
 
-        mfn1_count = 0
-        prn_count_number1 = 0
-        prn_count_number2 = 0
+        image = sitk.ReadImage(pre)
+        predict = sitk.GetArrayFromImage(image)
 
-        intersection_count1 = 0
-        union_count1 = 0  # 합집합
-        comp_index = 0
+        prediction_class = np.where(predict == 1, 1, 0)
+        target_class = np.where(lbl_1 == 1, 1, 0)
 
-        union_count2 = 0  # 합집합
-        intersection_count2 = 0
+        intersection = np.sum(prediction_class * target_class)
+        union = np.sum(prediction_class) + np.sum(target_class) - intersection
 
-        # pv==1 => mx, pv==2 => md
-        for pv in tqdm(prn, desc='Processing', unit='element'):  # 넘파이로 변형된 배열을 한복셀씩 for문을 돌린다.
-            if Mandibular_UI.mode_all_md_mx == 'MX' or Mandibular_UI.mode_all_md_mx == 'ALL':
-                if pv == 1:
-                    prn_count_number1 += 1
+        dice1 = (2. * intersection + 1e-5) / (np.sum(prediction_class) + np.sum(target_class) + 1e-5)
+        iou1 = intersection / union
+        dice_loss1 = 1 - dice1
 
-                if pv == 1 or mfn1[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
-                    union_count1 += 1  # 합집합
-                    mfn1_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
-                    if pv == 1 and mfn1[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
-                        intersection_count1 += 1  # 교집합 복셀을 1씩 늘린다.
-
-            elif Mandibular_UI.mode_all_md_mx == 'MD':
-                if pv == 2:
-                    prn_count_number1 += 1
-
-                if pv == 2 or mfn1[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
-                    union_count1 += 1  # 합집합
-                    mfn1_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
-                    if pv == 2 and mfn1[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
-                        intersection_count1 += 1  # 교집합 복셀을 1씩 늘린다.
-
-            if lbl_num2 != '':
-                if pv == 2 or mfn2[comp_index] > 0:  # 정답과 예측 복셀이 둘중 하나가 1인 경우
-                    union_count2 += 1  # 합집합
-                    mfn2_count += 1  # 마스크 중에 1인 복셀값을 카운팅.
-                    if pv == 2 and mfn2[comp_index] > 0:  # 정답과 예측 복셀이 모두 1인 경우
-                        intersection_count2 += 1  # 교집합 복셀을 1씩 늘린다.
-                if pv == 2:
-                    prn_count_number2 += 1
-
-            comp_index += 1
-
-        dice1 = intersection_count1 * 2 / (mfn1_count + prn_count_number1)  # dice 계산  공식
-        dice_loss1 = 1 - dice1  # dice_loss 계산 공식
-        iou1 = intersection_count1 / union_count1  # iou 계산 공식
-        print(mfn1_count, prn_count_number1, intersection_count1)
         if lbl_num2 != '':
-            dice2 = intersection_count2 * 2 / (mfn2_count + prn_count_number2)  # dice 계산  공식
-            dice_loss2 = 1 - dice2  # dice_loss 계산 공식
-            iou2 = intersection_count2 / union_count2  # iou 계산 공식
-            # 현재 모드에 따라서 출력하는 값이 다름
+            lbl_2 = lbl_num2 + '.nrrd'
+            image = sitk.ReadImage(lbl_2)
+            lbl_2 = sitk.GetArrayFromImage(image)
+
+            prediction_class = np.where(predict == 2, 1, 0)
+            target_class = np.where(lbl_2 == 1, 1, 0)
+
+            intersection = np.sum(prediction_class * target_class)
+            union = np.sum(prediction_class) + np.sum(target_class) - intersection
+
+            dice2 = (2. * intersection + 1e-5) / (np.sum(prediction_class) + np.sum(target_class) + 1e-5)
+            iou2 = intersection / union
+            dice_loss2 = 1 - dice2
 
             if self.get_mode == 'diceloss':
                 self.operator = '>'
@@ -951,13 +905,13 @@ class MandibularMaxilla:
                 ws.cell(i + 1, j + 1).fill = self.yellow_color
                 ws.cell(i + 1, j + 1).alignment = Alignment(horizontal='center')
 
-        if Mandibular_UI.mode_all_md_mx == 'MD':
+        if Mandibular_UI.mode_all_mn_mx == 'MN':
             ws.delete_rows(11)
             ws.delete_rows(10)
             ws.delete_rows(9)
             ws.delete_rows(8)
             ws.delete_rows(7)
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
             ws.delete_rows(11)
             ws.delete_rows(10)
             ws.delete_rows(9)
@@ -1016,11 +970,11 @@ class MandibularMaxilla:
 
         ws.column_dimensions['A'].width = 19
 
-        if Mandibular_UI.mode_all_md_mx == 'MD':
+        if Mandibular_UI.mode_all_mn_mx == 'MN':
             ws.delete_rows(7)
             ws.delete_rows(5)
 
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
             ws.delete_rows(6)
             ws.delete_rows(5)
 
@@ -1050,16 +1004,16 @@ class MandibularMaxilla:
         os.mkdir(location)
         graph = df  # 시트2 데이터 프레임
         name = ''
-        if Mandibular_UI.mode_all_md_mx == 'ALL':
+        if Mandibular_UI.mode_all_mn_mx == 'ALL':
             self.dataframe_column.insert(0, 'total')
             name = 'total'
-        elif Mandibular_UI.mode_all_md_mx == 'MD':
+        elif Mandibular_UI.mode_all_mn_mx == 'MN':
             self.dataframe_column.remove('MX')
             graph.drop(labels='MX', axis=0)
-            name = 'MD'
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
-            self.dataframe_column.remove('MD')
-            graph.drop(labels='MD', axis=0)
+            name = 'MN'
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
+            self.dataframe_column.remove('MN')
+            graph.drop(labels='MN', axis=0)
             name = 'MX'
 
         graph_dict = graph.to_dict('list')
@@ -1093,18 +1047,18 @@ class MandibularMaxilla:
         y_include_column = y
         y_out_include_column = y_out
         name = 'total'
-        if Mandibular_UI.mode_all_md_mx == 'MD':
+        if Mandibular_UI.mode_all_mn_mx == 'MN':
             column_number = 1
             y_include_column = [y[1]]
             y_out_include_column = [y_out[1]]
-            name = 'MD'
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
+            name = 'MN'
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
             column_number = 2
             y_include_column = [y[2]]
             y_out_include_column = [y_out[2]]
             name = 'MX'
 
-        if Mandibular_UI.mode_all_md_mx == 'ALL':
+        if Mandibular_UI.mode_all_mn_mx == 'ALL':
             plt.figure(figsize=(4, 3))  # graph 사이즈
         else:
             plt.figure(figsize=(4, 3))  # graph 사이즈
@@ -1196,11 +1150,11 @@ class MandibularMaxilla:
         print(graph)
 
         name = 'total'
-        if Mandibular_UI.mode_all_md_mx == 'MD':
+        if Mandibular_UI.mode_all_mn_mx == 'MN':
             graph.drop(labels='MX', axis=0)
-            name = 'MD'
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
-            graph.drop(labels='MD', axis=0)
+            name = 'MN'
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
+            graph.drop(labels='MN', axis=0)
             name = 'MX'
 
         graph_dict = graph.to_dict('list')
@@ -1243,18 +1197,18 @@ class MandibularMaxilla:
         name = 'total'
         std_array = std
 
-        if Mandibular_UI.mode_all_md_mx == 'MD':
+        if Mandibular_UI.mode_all_mn_mx == 'MN':
             column_number = 1
             y_include_column = [y[1]]
-            name = 'MD'
+            name = 'MN'
             std_array = [std[1]]
-        elif Mandibular_UI.mode_all_md_mx == 'MX':
+        elif Mandibular_UI.mode_all_mn_mx == 'MX':
             column_number = 2
             y_include_column = [y[2]]
             name = 'MX'
             std_array = [std[2]]
 
-        if Mandibular_UI.mode_all_md_mx == 'ALL':
+        if Mandibular_UI.mode_all_mn_mx == 'ALL':
             plt.figure(figsize=(4, 3))  # graph 사이즈
         else:
             plt.figure(figsize=(4, 3))  # graph 사이즈
