@@ -882,23 +882,25 @@ class PreShin_UI(QWidget):
                             result_outlier += ws.cell(row=row, column=4).value
                             num_outlier += 1
                         num += 1
+                if result == 0:
+                    pass
+                else:
+                    aver = result / num
+                    outlier_aver = result_outlier / num_outlier
 
-                aver = result / num
-                outlier_aver = result_outlier / num_outlier
+                    for dis in range(landmark_row, landmark_row + len(group_value[i])):  # 분산
+                        std_data = ws.cell(row=dis, column=2).value
+                        if std_data == 'None' or std_data == ' ':
+                            pass
+                        else:
+                            if ws.cell(row=dis, column=4).value != ' ':
+                                dispersion_outlier += ((ws.cell(row=dis, column=4).value - outlier_aver) ** 2) / num_outlier
+                            dispersion += ((ws.cell(row=dis, column=2).value - aver) ** 2) / num
 
-                for dis in range(landmark_row, landmark_row + len(group_value[i])):  # 분산
-                    std_data = ws.cell(row=dis, column=2).value
-                    if std_data == 'None' or std_data == ' ':
-                        pass
-                    else:
-                        if ws.cell(row=dis, column=4).value != ' ':
-                            dispersion_outlier += ((ws.cell(row=dis, column=4).value - outlier_aver) ** 2) / num_outlier
-                        dispersion += ((ws.cell(row=dis, column=2).value - aver) ** 2) / num
-
-                ws[f'B{group_row}'] = aver  # Group 평균 삽입
-                ws[f'D{group_row}'] = outlier_aver
-                ws[f'C{group_row}'] = sqrt(dispersion)  # 표준편차 (루트 분산)
-                ws[f'E{group_row}'] = sqrt(dispersion_outlier)
+                    ws[f'B{group_row}'] = aver  # Group 평균 삽입
+                    ws[f'D{group_row}'] = outlier_aver
+                    ws[f'C{group_row}'] = sqrt(dispersion)  # 표준편차 (루트 분산)
+                    ws[f'E{group_row}'] = sqrt(dispersion_outlier)
 
             group_row += len(group_value[i]) + 1
             landmark_row += len(group_value[i]) + 1
