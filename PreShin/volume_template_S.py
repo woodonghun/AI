@@ -396,7 +396,7 @@ class Vol_Template:
                     # data[2] = (int(re.sub(r'[^0-9]', '', data_list[j])) - 128)/2 + 192  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
                     data[2] = int(re.sub(r'[^0-9]', '', data_list[j]))  # 정규 표현식으로 문자열 제거, 정답을 ai 기준으로 맞추기 위해서 128씩 더하고 뺌
 
-                elif 'tst' in data_list[j]:  # sts
+                elif 'sts' in data_list[j]:  # sts
                     # data[1] = int(re.sub(r'[^0-9]', '', data_list[j])) - 192
                     data[1] = int(re.sub(r'[^0-9]', '', data_list[j]))
 
@@ -406,7 +406,7 @@ class Vol_Template:
 
             label_dict[i] = data  # dict 에 추가
 
-        df_label = pd.DataFrame(label_dict, index=['Air', 'Transparent Soft Tissue', 'Hard Tissue'])
+        df_label = pd.DataFrame(label_dict, index=['Air', 'Soft Tissue', 'Hard Tissue'])
         print(df_label)
         logger.info('label data transform end')
         return df_label
@@ -420,10 +420,7 @@ class Vol_Template:
 
         for j in range(len(predict_id_list)):
             data = [0, 0, 0]
-            text_file = os.listdir(f'{loc}/{predict_id_list[j]}')
-            if len(text_file)>1:
-                logger.error("text data is more than 1")
-            txt = open(f'{loc}/{predict_id_list[j]}/{text_file[0]}', 'r', encoding='UTF8')
+            txt = open(f'{loc}/{predict_id_list[j]}', 'r', encoding='UTF8')
             lines = txt.readlines()  # txt 한줄씩 읽기
 
             for k in range(len(lines)):
@@ -437,22 +434,22 @@ class Vol_Template:
                 else:
                     if line[0] == 'air':
                         data[0] = float(line_float[0])
-                    elif line[0] == 'transparent soft tissue':
-                        data[1] = float(line_float[0])
                     elif line[0] == 'hard tissue':
                         data[2] = float(line_float[0])
+                    elif line[0] == 'soft tissue':
+                        data[1] = float(line_float[0])
 
             predict_dict[predict_id_list[j].split('.')[0]] = data  # dict 에 추가
-        df_predict = pd.DataFrame(predict_dict, index=['Air', 'Transparent Soft Tissue', 'Hard Tissue'])
+        df_predict = pd.DataFrame(predict_dict, index=['Air', 'Soft Tissue', 'Hard Tissue'])
         # df_predict = df_predict*256
         print(df_predict)
         df_predict.loc['Air'] = df_predict.loc['Air'] * 128
 
-        df_predict.loc['Transparent Soft Tissue'] = df_predict.loc['Transparent Soft Tissue'] * 128
-        df_predict.loc['Transparent Soft Tissue'] = df_predict.loc['Transparent Soft Tissue'].add(128)
+        df_predict.loc['Soft Tissue'] = df_predict.loc['Soft Tissue'] * 128
+        df_predict.loc['Soft Tissue'] = df_predict.loc['Soft Tissue'].add(256)
 
         df_predict.loc['Hard Tissue'] = df_predict.loc['Hard Tissue'] * 128
-        df_predict.loc['Hard Tissue'] = df_predict.loc['Hard Tissue'].add(256)
+        df_predict.loc['Hard Tissue'] = df_predict.loc['Hard Tissue'].add(128)
 
         print(df_predict)
         logger.info('Label Data Transform End')

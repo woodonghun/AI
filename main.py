@@ -9,6 +9,7 @@ import PreShin.tooth
 
 from PySide2.QtWidgets import QWidget, QPushButton, QApplication, QMessageBox
 from PreShin.loggers import logger
+import PreShin.volume_template_S
 
 
 def messagebox(i: str):
@@ -66,6 +67,11 @@ def btn_vtp_clicked():  # volume template
     PreShin.volume_template.Vol_Template_UI()
     logger.info('Volume_template UI end')
 
+def btn_vtp_S_clicked():  # volume template
+    logger.info('Volume_template_S UI start')
+    PreShin.volume_template_S.Vol_Template_UI()
+    logger.info('Volume_template_S UI end')
+
 
 def btn_mandibular_clicked():
     logger.info('MN/MX UI start')
@@ -102,19 +108,24 @@ class Main(QWidget):
         btn_PreShin_2d.clicked.connect(btn_PreShin_2D_clicked)
 
         btn_vtp = QPushButton(self)
-        btn_vtp.setText("Volume_template")
-        btn_vtp.setGeometry(20, 60, 120, 20)
-        btn_vtp.clicked.connect(btn_vtp_clicked)
+        btn_vtp.setText("Volume_template_S")
+        btn_vtp.setGeometry(20, 160, 120, 20)
+        btn_vtp.clicked.connect(btn_vtp_S_clicked)
 
         btn_mandibular = QPushButton(self)
         btn_mandibular.setText("MX / MN")
-        btn_mandibular.setGeometry(20, 160, 120, 20)
+        btn_mandibular.setGeometry(20, 60, 120, 20)
         btn_mandibular.clicked.connect(btn_mandibular_clicked)
 
         btn_tooth = QPushButton(self)
         btn_tooth.setText("Tooth")
         btn_tooth.setGeometry(20, 135, 120, 20)
         btn_tooth.clicked.connect(btn_tooth_clicked)
+
+        btn_vtp = QPushButton(self)
+        btn_vtp.setText("Volume_template")
+        btn_vtp.setGeometry(20, 185, 120, 20)
+        btn_vtp.clicked.connect(btn_vtp_clicked)
 
         btn_manual = QPushButton(self)
         btn_manual.setText("Manual Open")
